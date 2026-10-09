@@ -12,8 +12,10 @@
 
 #include "Config.h"
 #include "modules/AutoFunc/AutoFunc.h"
+#include "modules/Camera/Camera.h"
 #include "modules/Find/Find.h"
 #include "modules/Models/Models.h"
+#include "modules/ViewModelLag/ViewModelLag.h"
 
 namespace hooks {
 
@@ -81,7 +83,9 @@ static void H_HUD_Init() {
 		RegisterGlobalCvars();
 		Find::Init();
 		Models::Init();
-		// (ViewModelLag::Init / Camera::Init / Efx::Init join here)
+		ViewModelLag::Init();
+		Camera::Init();
+		// (Efx::Init joins here)
 	}
 	gExportfuncs.HUD_Init();
 	// AutoFunc replays persisted concurrent/event bindings after the base HUD
@@ -95,7 +99,7 @@ static void H_HUD_Init() {
 
 static int H_HUD_VidInit() {
 	AutoFunc::ResetWeapons();
-	// (ViewModelLag::VidInit joins here)
+	ViewModelLag::VidInit();
 	return gExportfuncs.HUD_VidInit();
 }
 
@@ -119,7 +123,7 @@ static int H_HUD_GetStudioModelInterface(int version, struct r_studio_interface_
 }
 
 static int H_HUD_UpdateClientData(struct client_data_s* c, float f) {
-	// (ViewModelLag fov capture joins here)
+	ViewModelLag::OnUpdateClientData(c);
 	return gExportfuncs.HUD_UpdateClientData(c, f);
 }
 
@@ -144,10 +148,10 @@ static void H_V_CalcRefdef(struct ref_params_s* pparams) {
 	// nextView is zeroed by the client dll - chain first (old order)
 	gExportfuncs.V_CalcRefdef(pparams);
 	if (!gExportfuncs.CL_IsThirdPerson()) {
-		// (ViewModelLag::CalcRefdef joins here: viewsize fudge + lag + slide)
+		ViewModelLag::CalcRefdef(pparams);
 	}
 	else {
-		// (Camera::CalcRefdef joins here)
+		Camera::CalcRefdef(pparams);
 	}
 }
 
