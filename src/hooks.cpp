@@ -12,6 +12,7 @@
 
 #include "Config.h"
 #include "modules/Find/Find.h"
+#include "modules/Models/Models.h"
 
 namespace hooks {
 
@@ -78,8 +79,8 @@ static void H_HUD_Init() {
 		s_bRegistered = true;
 		RegisterGlobalCvars();
 		Find::Init();
-		// (Models::Init / ViewModelLag::Init / Camera::Init /
-		//  Efx::Init join here)
+		Models::Init();
+		// (ViewModelLag::Init / Camera::Init / Efx::Init join here)
 	}
 	gExportfuncs.HUD_Init();
 	// AutoFunc replays persisted concurrent/event bindings after the base HUD
