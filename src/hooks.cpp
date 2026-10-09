@@ -13,6 +13,8 @@
 #include "Config.h"
 #include "modules/AutoFunc/AutoFunc.h"
 #include "modules/Camera/Camera.h"
+#include "modules/Efx/Efx.h"
+#include "modules/Efx/ExtraPrecache.h"
 #include "modules/Find/Find.h"
 #include "modules/Models/Models.h"
 #include "modules/ViewModelLag/ViewModelLag.h"
@@ -33,30 +35,29 @@ static std::vector<hook_t*> s_aryClientHook;
 
 #pragma region Engine hook bodies
 static void H_R_NewMap() {
-	// (Efx::Reset joins here)
+	Efx::Reset();
 	gHooks.R_NewMap();
 }
 
 static model_t* H_CL_GetModelByIndex(int index) {
-	// (ExtraPrecache dispatch joins here)
+	model_t* pExtra = ExtraPrecache_GetByModelIndex(index);
+	if (pExtra)
+		return pExtra;
 	return gHooks.CL_GetModelByIndex(index);
 }
 
 static void H_R_BloodSprite(float* org, int colorindex, int modelIndex, int modelIndex2, float size) {
-	// (Efx::R_BloodSprite joins here)
-	gHooks.R_BloodSprite(org, colorindex, modelIndex, modelIndex2, size);
+	Efx::R_BloodSprite(org, colorindex, modelIndex, modelIndex2, size);
 }
 
 static TEMPENTITY* H_R_TempModel(float* pos, float* dir, float* angles, float life, int modelIndex, int soundtype) {
-	// (Efx::R_TempModel joins here)
-	return gHooks.R_TempModel(pos, dir, angles, life, modelIndex, soundtype);
+	return Efx::R_TempModel(pos, dir, angles, life, modelIndex, soundtype);
 }
 
 static void H_pfnPlaybackEvent(int flags, const struct edict_s* pInvoker, unsigned short eventindex,
 	float delay, float* origin, float* angles, float fparam1, float fparam2, int iparam1, int iparam2,
 	int bparam1, int bparam2) {
-	// (Efx::pfnPlaybackEvent joins here)
-	gHooks.pfnPlaybackEvent(flags, pInvoker, eventindex, delay, origin, angles,
+	Efx::pfnPlaybackEvent(flags, pInvoker, eventindex, delay, origin, angles,
 		fparam1, fparam2, iparam1, iparam2, bparam1, bparam2);
 }
 
@@ -85,7 +86,7 @@ static void H_HUD_Init() {
 		Models::Init();
 		ViewModelLag::Init();
 		Camera::Init();
-		// (Efx::Init joins here)
+		Efx::Init();
 	}
 	gExportfuncs.HUD_Init();
 	// AutoFunc replays persisted concurrent/event bindings after the base HUD
@@ -107,7 +108,7 @@ static void H_HUD_Frame(double frametime) {
 	gExportfuncs.HUD_Frame(frametime);
 	// pump main-thread continuations (abc::Task / DispatchToMainThread)
 	abc::GetTaskManager()->CheckAll();
-	// (Efx::Frame joins here)
+	Efx::Frame();
 }
 
 static void H_HUD_Shutdown() {
@@ -156,7 +157,8 @@ static void H_V_CalcRefdef(struct ref_params_s* pparams) {
 }
 
 static int H_HUD_AddEntity(int type, struct cl_entity_s* ent, const char* modelname) {
-	// (Efx::AddEntity joins here: true = swallow the entity)
+	if (Efx::AddEntity(type, ent))
+		return 0;
 	return gExportfuncs.HUD_AddEntity(type, ent, modelname);
 }
 #pragma endregion

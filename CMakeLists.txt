@@ -18,6 +18,8 @@ add_library(AbcEssential MODULE
     src/modules/AutoFunc/AutoFunc.cpp
     src/modules/ViewModelLag/ViewModelLag.cpp
     src/modules/Camera/Camera.cpp
+    src/modules/Efx/Efx.cpp
+    src/modules/Efx/ExtraPrecache.cpp
     # Generic CreateInterface export (EXPOSE_SINGLE_INTERFACE implementation)
     "${METAHOOK_INCLUDE_DIR}/HLSDK/common/interface.cpp"
 )
