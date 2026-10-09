@@ -11,6 +11,8 @@ set(METAHOOK_INCLUDE_DIR "${ABC_CORE_DIR}/thirdparty/MetaHook/include")
 
 add_library(AbcEssential MODULE
     src/plugins.cpp
+    src/hooks.cpp
+    src/Config.cpp
     # Generic CreateInterface export (EXPOSE_SINGLE_INTERFACE implementation)
     "${METAHOOK_INCLUDE_DIR}/HLSDK/common/interface.cpp"
 )
