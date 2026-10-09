@@ -15,6 +15,7 @@ add_library(AbcEssential MODULE
     src/Config.cpp
     src/modules/Find/Find.cpp
     src/modules/Models/Models.cpp
+    src/modules/AutoFunc/AutoFunc.cpp
     # Generic CreateInterface export (EXPOSE_SINGLE_INTERFACE implementation)
     "${METAHOOK_INCLUDE_DIR}/HLSDK/common/interface.cpp"
 )

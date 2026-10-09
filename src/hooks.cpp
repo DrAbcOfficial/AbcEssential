@@ -11,6 +11,7 @@
 #include <abc/Task.h>
 
 #include "Config.h"
+#include "modules/AutoFunc/AutoFunc.h"
 #include "modules/Find/Find.h"
 #include "modules/Models/Models.h"
 
@@ -88,12 +89,13 @@ static void H_HUD_Init() {
 	static bool s_bPostChainInit = false;
 	if (!s_bPostChainInit) {
 		s_bPostChainInit = true;
-		// (AutoFunc::Init joins here)
+		AutoFunc::Init();
 	}
 }
 
 static int H_HUD_VidInit() {
-	// (AutoFunc weapon-table reset + ViewModelLag::VidInit join here)
+	AutoFunc::ResetWeapons();
+	// (ViewModelLag::VidInit joins here)
 	return gExportfuncs.HUD_VidInit();
 }
 
@@ -105,7 +107,7 @@ static void H_HUD_Frame(double frametime) {
 }
 
 static void H_HUD_Shutdown() {
-	// (AutoFunc::Exit joins here)
+	AutoFunc::Exit();
 	abcess::SaveConfig();
 	gExportfuncs.HUD_Shutdown();
 	UninstallClientHooks();
@@ -123,18 +125,19 @@ static int H_HUD_UpdateClientData(struct client_data_s* c, float f) {
 
 static void H_HUD_PlayerMove(struct playermove_s* ppmove, qboolean server) {
 	gExportfuncs.HUD_PlayerMove(ppmove, server);
-	// (AutoFunc::OnPlayerMove joins here)
+	AutoFunc::OnPlayerMove(ppmove->waterlevel > 1, ppmove->onground != -1, ppmove->movetype == MOVETYPE_WALK);
 }
 
 static void H_HUD_TxferPredictionData(struct entity_state_s* ps, const struct entity_state_s* pps,
 	struct clientdata_s* pcd, const struct clientdata_s* ppcd, struct weapon_data_s* wd, const struct weapon_data_s* pwd) {
-	// (AutoFunc::OnTxferPredictionData joins here)
+	AutoFunc::OnTxferPredictionData(wd);
 	gExportfuncs.HUD_TxferPredictionData(ps, pps, pcd, ppcd, wd, pwd);
 }
 
 static void H_CL_CreateMove(float frametime, struct usercmd_s* cmd, int active) {
 	gExportfuncs.CL_CreateMove(frametime, cmd, active);
-	// (AutoFunc::AutoJump / AutoFunc::DuckTap join here)
+	AutoFunc::AutoJump(cmd);
+	AutoFunc::DuckTap(cmd);
 }
 
 static void H_V_CalcRefdef(struct ref_params_s* pparams) {

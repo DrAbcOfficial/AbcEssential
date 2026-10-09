@@ -14,6 +14,7 @@
 
 #include <metahook.h>
 #include <com_model.h>
+#include <pm_defs.h>
 #include <r_studioint.h>
 
 namespace hooks {
