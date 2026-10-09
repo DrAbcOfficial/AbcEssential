@@ -39,6 +39,9 @@ static abc::CChainedCommand* s_pChainedVersion = nullptr;
 static bool s_bTaskDone = false;
 static int s_nTaskResult = -1;
 static bool s_bChainSubscriberRan = false;
+static DWORD s_dwMainThreadId = 0;
+static bool s_bDispatchRan = false;
+static DWORD s_dwDispatchThreadId = 0;
 
 static void HUD_Frame(double time);
 static void HUD_Init(void);
@@ -47,6 +50,8 @@ static void CmdStatus() {
 	abc::ConsolePrint("[abc_test_status] task %s (result=%d), chain subscriber %s\n",
 		s_bTaskDone ? "DONE" : "pending", s_nTaskResult,
 		s_bChainSubscriberRan ? "RAN" : "not yet");
+	abc::ConsolePrint("[abc_test_status] main-thread dispatch %s (thread %lu, main %lu)\n",
+		s_bDispatchRan ? "RAN" : "pending", s_dwDispatchThreadId, s_dwMainThreadId);
 	abc::ConsolePrint("[abc_test_status] gamedir=%s\n", abc::GameDir());
 	abc::ConsolePrint("[abc_test_status] config=%s\n", abc::ModPath(CONFIG_PATH).c_str());
 	abc::ConsolePrint("[abc_test_status] cvar abc_test_value=%s (pointer=%p)\n",
@@ -101,6 +106,16 @@ static void CmdTest() {
 		return true;
 	});
 	abc::ConsolePrint("[abc_test] 8 chained-command subscriber armed; run `version` then abc_test_status\n");
+
+	s_bDispatchRan = false;
+	s_dwDispatchThreadId = 0;
+	abc::DispatchToMainThread([]() {
+		// Must run on the HUD_Frame (main) thread, never on a worker.
+		s_dwDispatchThreadId = GetCurrentThreadId();
+		s_bDispatchRan = true;
+	});
+	abc::ConsolePrint("[abc_test] 9 DispatchToMainThread queued (expect thread %lu; poll abc_test_status)\n",
+		s_dwMainThreadId);
 }
 
 class CAbcEssential : public abc::CAbcPluginBase {
@@ -136,6 +151,7 @@ static void HUD_Init(void) {
 		s_bRegistered = true;
 		// cvar/command registration happens at HUD_Init time (client ready),
 		// the proven point from ABCEnchance.
+		s_dwMainThreadId = GetCurrentThreadId();
 		s_pCvarTest = abc::CCvarRegistrar::Get()->Create("abc_test_value", "1.0", abc::FCVAR_VALUE);
 		abc::ADD_COMMAND("abc_test", CmdTest);
 		abc::ADD_COMMAND("abc_test_status", CmdStatus);
