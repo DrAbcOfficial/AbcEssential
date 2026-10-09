@@ -13,6 +13,7 @@ add_library(AbcEssential MODULE
     src/plugins.cpp
     src/hooks.cpp
     src/Config.cpp
+    src/modules/Find/Find.cpp
     # Generic CreateInterface export (EXPOSE_SINGLE_INTERFACE implementation)
     "${METAHOOK_INCLUDE_DIR}/HLSDK/common/interface.cpp"
 )

@@ -11,6 +11,7 @@
 #include <abc/Task.h>
 
 #include "Config.h"
+#include "modules/Find/Find.h"
 
 namespace hooks {
 
@@ -76,7 +77,8 @@ static void H_HUD_Init() {
 		// the proven point from ABCEnchance (08 §4.9).
 		s_bRegistered = true;
 		RegisterGlobalCvars();
-		// (Find::Init / Models::Init / ViewModelLag::Init / Camera::Init /
+		Find::Init();
+		// (Models::Init / ViewModelLag::Init / Camera::Init /
 		//  Efx::Init join here)
 	}
 	gExportfuncs.HUD_Init();
