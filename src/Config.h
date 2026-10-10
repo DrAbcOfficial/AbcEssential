@@ -13,12 +13,15 @@
 #include <string>
 
 struct CAbcEssentialConfig {
+	// 0 = pre-Phase-2 file (or absent); bumped on load so the legacy import
+	// runs exactly once even when a Phase 1 acceptance-config already exists.
+	int m_iSchemaVersion = 0;
 	std::set<std::string> m_aryFavModels;
 	std::map<std::string, std::string> m_dicConcurrentCmd;
 	std::map<std::string, std::string> m_dicEventsCmd;
 
-	AIGC_JSON_HELPER(m_aryFavModels, m_dicConcurrentCmd, m_dicEventsCmd);
-	AIGC_JSON_HELPER_RENAME("favorite_models", "concurrent_cmds", "event_cmds");
+	AIGC_JSON_HELPER(m_iSchemaVersion, m_aryFavModels, m_dicConcurrentCmd, m_dicEventsCmd);
+	AIGC_JSON_HELPER_RENAME("schema_version", "favorite_models", "concurrent_cmds", "event_cmds");
 };
 
 namespace abcess {
