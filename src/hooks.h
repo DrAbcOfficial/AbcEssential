@@ -19,8 +19,6 @@
 
 namespace hooks {
 
-constexpr char ABCESS_VERSION[] = "0.2.0";
-
 // Originals + scanned addresses, filled by FillEngineAddress/FillClientAddress
 // and detoured by InstallEngineHooks/InstallClientHooks.
 //

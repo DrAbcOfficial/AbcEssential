@@ -11,12 +11,13 @@
 #include <abc/Plugin.h>
 #include <abc/Task.h>
 
-#include "Config.h"
 #include "hooks.h"
+#include "services/Config.h"
+#include "services/Version.h"
 
 class CAbcEssential : public abc::CAbcPluginBase {
 public:
-	CAbcEssential() : abc::CAbcPluginBase("AbcEssential", hooks::ABCESS_VERSION) {}
+	CAbcEssential() : abc::CAbcPluginBase("AbcEssential", abcess::kVersion) {}
 
 protected:
 	void OnLoadEngine() override {

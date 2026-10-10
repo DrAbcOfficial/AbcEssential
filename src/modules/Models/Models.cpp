@@ -20,7 +20,7 @@
 #include <abc/CvarCmd.h>
 #include <abc/Plugin.h>
 
-#include "../../Config.h"
+#include "../../services/Config.h"
 #include "../Module.h"
 
 namespace {

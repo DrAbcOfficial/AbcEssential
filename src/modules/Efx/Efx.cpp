@@ -24,7 +24,7 @@
 #include <abc/CvarCmd.h>
 #include <abc/Math.h>
 
-#include "ExtraPrecache.h"
+#include "../../services/ExtraPrecache.h"
 #include "Palette.h"
 #include "../../hooks.h"
 #include "../Module.h"
@@ -337,15 +337,15 @@ void Init() {
 }
 
 void Reset() {
-	ExtraPrecache_Clear();
+	extraPrecache::clear();
 	s_egonMessageNum = 0;
 	s_egonNextShoot = 0;
-	s_EfxVariable.iGaussBeam = ExtraPrecache_Precache("sprites/laserbeam.spr");
-	s_EfxVariable.iGaussWaveBeam = ExtraPrecache_Precache("abcenchance/spr/gauss_wave.spr");
-	s_EfxVariable.iGaussChargeSprite = ExtraPrecache_Precache("abcenchance/spr/gauss_spark.spr");
-	s_EfxVariable.iGaussLoophole = ExtraPrecache_Precache("abcenchance/mdl/gauss_loophole.mdl");
-	s_EfxVariable.iGunSmoke = ExtraPrecache_Precache("sprites/Puff1.spr");
-	s_EfxVariable.iEgonBeam = ExtraPrecache_Precache("abcenchance/spr/egon_ball.spr");
+	s_EfxVariable.iGaussBeam = extraPrecache::precache("sprites/laserbeam.spr");
+	s_EfxVariable.iGaussWaveBeam = extraPrecache::precache("abcenchance/spr/gauss_wave.spr");
+	s_EfxVariable.iGaussChargeSprite = extraPrecache::precache("abcenchance/spr/gauss_spark.spr");
+	s_EfxVariable.iGaussLoophole = extraPrecache::precache("abcenchance/mdl/gauss_loophole.mdl");
+	s_EfxVariable.iGunSmoke = extraPrecache::precache("sprites/Puff1.spr");
+	s_EfxVariable.iEgonBeam = extraPrecache::precache("abcenchance/spr/egon_ball.spr");
 }
 
 void Frame() {

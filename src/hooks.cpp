@@ -10,14 +10,15 @@
 #include <abc/Plugin.h>
 #include <abc/Task.h>
 
-#include "Config.h"
 #include "modules/Module.h"
 #include "modules/AutoFunc/AutoFunc.h"
 #include "modules/AutoFunc/Signals.h"
 #include "modules/Camera/Camera.h"
 #include "modules/Efx/Efx.h"
-#include "modules/Efx/ExtraPrecache.h"
 #include "modules/ViewModelLag/ViewModelLag.h"
+#include "services/Config.h"
+#include "services/ExtraPrecache.h"
+#include "services/Version.h"
 
 namespace hooks {
 
@@ -40,7 +41,7 @@ static void H_R_NewMap() {
 }
 
 static model_t* H_CL_GetModelByIndex(int index) {
-	model_t* pExtra = ExtraPrecache_GetByModelIndex(index);
+	model_t* pExtra = extraPrecache::getByModelIndex(index);
 	if (pExtra)
 		return pExtra;
 	return gHooks.CL_GetModelByIndex(index);
@@ -78,8 +79,8 @@ static void __fastcall H_CClient_SoundEngine_Initialize(void* pSoundEngine, int 
 #pragma region Export-table thunks (chained)
 static void RegisterGlobalCvars() {
 	// read-only version stamp: any write snaps back (old PLUGIN_VERSION cvar)
-	abc::CREATE_CVAR("abc_version", ABCESS_VERSION, FCVAR_EXTDLL | FCVAR_CLIENTDLL, [](cvar_t* cvar) {
-		abc::CVAR_SET_STRING("abc_version", ABCESS_VERSION);
+	abc::CREATE_CVAR("abc_version", abcess::kVersion, FCVAR_EXTDLL | FCVAR_CLIENTDLL, [](cvar_t* cvar) {
+		abc::CVAR_SET_STRING("abc_version", abcess::kVersion);
 	});
 }
 
@@ -122,6 +123,7 @@ static void H_HUD_Shutdown() {
 
 static int H_HUD_GetStudioModelInterface(int version, struct r_studio_interface_s** ppinterface, struct engine_studio_api_s* pstudio) {
 	memcpy(&gEngineStudio, pstudio, sizeof(gEngineStudio));
+	extraPrecache::setEngineStudio(pstudio);
 	return gExportfuncs.HUD_GetStudioModelInterface(version, ppinterface, pstudio);
 }
 

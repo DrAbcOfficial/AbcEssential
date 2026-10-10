@@ -16,7 +16,7 @@
 #include <abc/CvarCmd.h>
 #include <abc/Console.h>
 
-#include "../../Config.h"
+#include "../../services/Config.h"
 #include "../Module.h"
 #include "Signals.h"
 

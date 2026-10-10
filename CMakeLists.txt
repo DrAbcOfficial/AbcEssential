@@ -12,7 +12,8 @@ set(METAHOOK_INCLUDE_DIR "${ABC_CORE_DIR}/thirdparty/MetaHook/include")
 add_library(AbcEssential MODULE
     src/plugins.cpp
     src/hooks.cpp
-    src/Config.cpp
+    src/services/Config.cpp
+    src/services/ExtraPrecache.cpp
     src/modules/Module.cpp
     src/modules/Find/Find.cpp
     src/modules/Models/Models.cpp
@@ -21,7 +22,6 @@ add_library(AbcEssential MODULE
     src/modules/ViewModelLag/ViewModelLag.cpp
     src/modules/Camera/Camera.cpp
     src/modules/Efx/Efx.cpp
-    src/modules/Efx/ExtraPrecache.cpp
     # Generic CreateInterface export (EXPOSE_SINGLE_INTERFACE implementation)
     "${METAHOOK_INCLUDE_DIR}/HLSDK/common/interface.cpp"
 )

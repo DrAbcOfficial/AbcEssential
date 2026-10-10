@@ -22,7 +22,7 @@
 #include <abc/Console.h>
 #include <abc/NetMsg.h>
 
-#include "../../Config.h"
+#include "../../services/Config.h"
 
 namespace Signals {
 
