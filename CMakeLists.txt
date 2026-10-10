@@ -17,6 +17,7 @@ add_library(AbcEssential MODULE
     src/modules/Find/Find.cpp
     src/modules/Models/Models.cpp
     src/modules/AutoFunc/AutoFunc.cpp
+    src/modules/AutoFunc/Signals.cpp
     src/modules/ViewModelLag/ViewModelLag.cpp
     src/modules/Camera/Camera.cpp
     src/modules/Efx/Efx.cpp

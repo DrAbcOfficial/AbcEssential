@@ -13,6 +13,7 @@
 #include "Config.h"
 #include "modules/Module.h"
 #include "modules/AutoFunc/AutoFunc.h"
+#include "modules/AutoFunc/Signals.h"
 #include "modules/Camera/Camera.h"
 #include "modules/Efx/Efx.h"
 #include "modules/Efx/ExtraPrecache.h"
@@ -136,7 +137,7 @@ static void H_HUD_PlayerMove(struct playermove_s* ppmove, qboolean server) {
 
 static void H_HUD_TxferPredictionData(struct entity_state_s* ps, const struct entity_state_s* pps,
 	struct clientdata_s* pcd, const struct clientdata_s* ppcd, struct weapon_data_s* wd, const struct weapon_data_s* pwd) {
-	AutoFunc::OnTxferPredictionData(wd);
+	Signals::OnTxferPredictionData(wd);
 	gExportfuncs.HUD_TxferPredictionData(ps, pps, pcd, ppcd, wd, pwd);
 }
 
