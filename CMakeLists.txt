@@ -22,6 +22,10 @@ add_library(AbcEssential MODULE
     src/modules/ViewModelLag/ViewModelLag.cpp
     src/modules/Camera/Camera.cpp
     src/modules/Efx/Efx.cpp
+    src/modules/Efx/Blood.cpp
+    src/modules/Efx/Shell.cpp
+    src/modules/Efx/Gauss.cpp
+    src/modules/Efx/Egon.cpp
     # Generic CreateInterface export (EXPOSE_SINGLE_INTERFACE implementation)
     "${METAHOOK_INCLUDE_DIR}/HLSDK/common/interface.cpp"
 )
