@@ -2,12 +2,12 @@
 
 struct ref_params_s;
 
-namespace Camera {
+namespace camera {
 
 // Registers cam_idealheight / cam_idealright (HUD_Init time).
-void Init();
+void init();
 // Third-person V_CalcRefdef body: shifts the view origin along the camera
 // right axis and up.
-void CalcRefdef(struct ref_params_s* pparams);
+void calcRefdef(struct ref_params_s* pparams);
 
 }

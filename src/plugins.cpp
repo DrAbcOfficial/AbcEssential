@@ -15,30 +15,30 @@
 #include "services/Config.h"
 #include "services/Version.h"
 
-class CAbcEssential : public abc::CAbcPluginBase {
+class AbcEssentialPlugin : public abc::CAbcPluginBase {
 public:
-	CAbcEssential() : abc::CAbcPluginBase("AbcEssential", abcess::kVersion) {}
+	AbcEssentialPlugin() : abc::CAbcPluginBase("AbcEssential", abcess::kVersion) {}
 
 protected:
 	void OnLoadEngine() override {
 		// engine sig scans + efx/engfunc inline hooks; no cvar/command
 		// registration here (LoadEngine-time registration crashes, 08 §4.9)
-		hooks::FillEngineAddress();
-		hooks::InstallEngineHooks();
+		hooks::fillEngineAddress();
+		hooks::installEngineHooks();
 	}
 
 	void OnLoadClient(cl_exportfuncs_t* pExportFuncs) override {
-		hooks::FillClientAddress();
-		hooks::InstallClientHooks();
-		hooks::AttachExports(pExportFuncs);
-		abcess::LoadConfig();
+		hooks::fillClientAddress();
+		hooks::installClientHooks();
+		hooks::attachExports(pExportFuncs);
+		abcess::loadConfig();
 		abc::ConsolePrint("[AbcEssential] loaded %s\n", Version());
 	}
 
 	void OnExitGame(int iResult) override {
-		hooks::UninstallEngineHooks();
+		hooks::uninstallEngineHooks();
 		abc::GetTaskManager()->Shutdown();
 	}
 };
 
-EXPOSE_SINGLE_INTERFACE(CAbcEssential, IPluginsV4, METAHOOK_PLUGIN_API_VERSION_V4);
+EXPOSE_SINGLE_INTERFACE(AbcEssentialPlugin, IPluginsV4, METAHOOK_PLUGIN_API_VERSION_V4);

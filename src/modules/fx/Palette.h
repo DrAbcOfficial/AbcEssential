@@ -3,9 +3,11 @@
 #include <const.h>
 
 // Sven Co-op base palette (256 entries), ported verbatim from ABCEnchance
-// src/utility/palette.h (old Color class -> color24_t). Only the Efx module
-// consumes it (blood sprite tinting).
-static const color24_t ABC_SVENCOOP_PALETTE[256] = {
+// src/utility/palette.h (old Color class -> color24_t). Only the blood
+// sprite tinting consumes it.
+namespace fx {
+
+inline constexpr color24_t kSvenCoopPalette[256] = {
 	{0,0,0},{15,15,15},{31,31,31},{47,47,47},
 	{63,63,63},{75,75,75},{91,91,91},{107,107,107},
 	{123,123,123},{139,139,139},{155,155,155},{171,171,171},
@@ -71,3 +73,5 @@ static const color24_t ABC_SVENCOOP_PALETTE[256] = {
 	{139,0,0},{179,0,0},{215,0,0},{255,0,0},
 	{255,243,147},{255,247,199},{255,255,255},{159,91,83}
 };
+
+}

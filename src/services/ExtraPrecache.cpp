@@ -6,7 +6,7 @@
 #include <com_model.h>
 #include <r_studioint.h>
 
-namespace extraPrecache {
+namespace extraprecache {
 
 namespace {
 
@@ -18,28 +18,28 @@ constexpr int kMaxModels = 255;
 constexpr int kNeedLoadUnreferenced = 2; // NL_UNREFERENCED
 constexpr int kNeedLoadClient = 3;       // NL_CLIENT
 
-model_t* g_ExtraPrecacheModel[kMaxModels] = { 0 };
-size_t g_iExtraPrecacheSize = 0;
-const engine_studio_api_t* s_pStudio = nullptr;
+model_t* PrecachedModels[kMaxModels] = {};
+int ModelCount = 0;
+const engine_studio_api_t* Studio = nullptr;
 
 }
 
 void setEngineStudio(const engine_studio_api_s* studio) {
-	s_pStudio = studio;
+	Studio = studio;
 }
 
 model_t* getByModelIndex(int index) {
 	if (index >= kIndexBase && index < kIndexBase + kMaxModels)
-		return g_ExtraPrecacheModel[index - kIndexBase];
+		return PrecachedModels[index - kIndexBase];
 	return nullptr;
 }
 
 int getIndex(const char* path) {
-	for (size_t i = 0; i < g_iExtraPrecacheSize; i++) {
-		if (!g_ExtraPrecacheModel[i])
+	for (int i = 0; i < ModelCount; i++) {
+		if (!PrecachedModels[i])
 			continue;
-		if (!strcmp(path, g_ExtraPrecacheModel[i]->name))
-			return static_cast<int>(i) + kIndexBase;
+		if (!strcmp(path, PrecachedModels[i]->name))
+			return i + kIndexBase;
 	}
 	return -1;
 }
@@ -48,25 +48,25 @@ int precache(const char* path) {
 	int index = getIndex(path);
 	if (index > -1)
 		return index;
-	if (!s_pStudio || g_iExtraPrecacheSize >= kMaxModels)
+	if (!Studio || ModelCount >= kMaxModels)
 		return -1;
-	g_ExtraPrecacheModel[g_iExtraPrecacheSize] = s_pStudio->Mod_ForName(path, true);
-	if (!g_ExtraPrecacheModel[g_iExtraPrecacheSize])
+	PrecachedModels[ModelCount] = Studio->Mod_ForName(path, true);
+	if (!PrecachedModels[ModelCount])
 		return -1;
-	g_ExtraPrecacheModel[g_iExtraPrecacheSize]->needload = kNeedLoadClient;
-	index = static_cast<int>(g_iExtraPrecacheSize) + kIndexBase;
-	g_iExtraPrecacheSize++;
+	PrecachedModels[ModelCount]->needload = kNeedLoadClient;
+	index = ModelCount + kIndexBase;
+	ModelCount++;
 	return index;
 }
 
 void clear() {
-	for (size_t i = 0; i < g_iExtraPrecacheSize; i++) {
-		if (g_ExtraPrecacheModel[i]) {
-			g_ExtraPrecacheModel[i]->needload = kNeedLoadUnreferenced;
-			g_ExtraPrecacheModel[i] = nullptr;
+	for (int i = 0; i < ModelCount; i++) {
+		if (PrecachedModels[i]) {
+			PrecachedModels[i]->needload = kNeedLoadUnreferenced;
+			PrecachedModels[i] = nullptr;
 		}
 	}
-	g_iExtraPrecacheSize = 0;
+	ModelCount = 0;
 }
 
 }

@@ -15,17 +15,17 @@ add_library(AbcEssential MODULE
     src/services/Config.cpp
     src/services/ExtraPrecache.cpp
     src/modules/Module.cpp
-    src/modules/Find/Find.cpp
-    src/modules/Models/Models.cpp
-    src/modules/AutoFunc/AutoFunc.cpp
-    src/modules/AutoFunc/Signals.cpp
-    src/modules/ViewModelLag/ViewModelLag.cpp
-    src/modules/Camera/Camera.cpp
-    src/modules/Efx/Efx.cpp
-    src/modules/Efx/Blood.cpp
-    src/modules/Efx/Shell.cpp
-    src/modules/Efx/Gauss.cpp
-    src/modules/Efx/Egon.cpp
+    src/modules/find/Find.cpp
+    src/modules/models/Models.cpp
+    src/modules/autofunc/AutoFunc.cpp
+    src/modules/autofunc/Signals.cpp
+    src/modules/viewmodellag/ViewModelLag.cpp
+    src/modules/camera/Camera.cpp
+    src/modules/fx/Efx.cpp
+    src/modules/fx/Blood.cpp
+    src/modules/fx/Shell.cpp
+    src/modules/fx/Gauss.cpp
+    src/modules/fx/Egon.cpp
     # Generic CreateInterface export (EXPOSE_SINGLE_INTERFACE implementation)
     "${METAHOOK_INCLUDE_DIR}/HLSDK/common/interface.cpp"
 )

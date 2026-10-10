@@ -10,7 +10,7 @@
 struct model_s;
 struct engine_studio_api_s;
 
-namespace extraPrecache {
+namespace extraprecache {
 
 // Capture the studio API used to load out-of-band models.
 void setEngineStudio(const engine_studio_api_s* studio);

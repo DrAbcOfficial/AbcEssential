@@ -1,7 +1,8 @@
 // `find` - fuzzy-search cvars and console commands by substring.
 // Ported from ABCEnchance src/exportfuncs.cpp HUD_Init find block (~308-357).
 // Protected cvars print "**" instead of their value.
-#include "Find.h"
+// Output markers ("  name  [value]", "======" separators) are asserted by
+// external tooling - do not reword.
 
 #include <string>
 
@@ -12,38 +13,45 @@
 
 #include "../Module.h"
 
-void Find::Init() {
+namespace find {
+
+namespace {
+
+void registerCommand() {
 	abc::ADD_COMMAND("find", []() {
 		if (gEngfuncs.Cmd_Argc() <= 1)
 			return;
-		std::string sz = gEngfuncs.Cmd_Argv(1);
+		std::string query = gEngfuncs.Cmd_Argv(1);
 		abc::ConsolePrint("==============\n");
-		cvar_t* cvar = gEngfuncs.GetFirstCvarPtr();
-		while (cvar) {
-			std::string cvarname = cvar->name;
-			if (cvarname.find(sz) != std::string::npos)
+		for (cvar_t* cvar = gEngfuncs.GetFirstCvarPtr(); cvar; cvar = cvar->next) {
+			std::string name = cvar->name;
+			if (name.find(query) != std::string::npos)
 				abc::ConsolePrint("  %s  [%s]\n", cvar->name,
 					(cvar->flags & FCVAR_PROTECTED) != 0 ? "**" : cvar->string);
-			cvar = cvar->next;
 		}
 		abc::ConsolePrint("==============\n");
-		unsigned int cmd = gEngfuncs.GetFirstCmdFunctionHandle();
-		while (cmd) {
-			std::string cmdname = gEngfuncs.GetCmdFunctionName(cmd);
-			if (cmdname.find(sz) != std::string::npos)
-				abc::ConsolePrint("  %s\n", cmdname.c_str());
-			cmd = gEngfuncs.GetNextCmdFunctionHandle(cmd);
+		for (unsigned int handle = gEngfuncs.GetFirstCmdFunctionHandle(); handle;
+			handle = gEngfuncs.GetNextCmdFunctionHandle(handle)) {
+			std::string name = gEngfuncs.GetCmdFunctionName(handle);
+			if (name.find(query) != std::string::npos)
+				abc::ConsolePrint("  %s\n", name.c_str());
 		}
 		abc::ConsolePrint("==============\n");
 	});
 }
 
+}
+
 namespace {
+
 class FindModule final : public abcess::IFeatureModule {
 public:
 	FindModule() { abcess::moduleRegistry().add(this); }
 	const char* name() const override { return "find"; }
-	void onInit() override { Find::Init(); }
+	void onInit() override { registerCommand(); }
 };
 const FindModule RegisterModule;
+
+}
+
 }

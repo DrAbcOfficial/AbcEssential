@@ -1,9 +1,14 @@
 // AbcEssential hook installation and chained export thunks (plan 04 §1).
 // Ported from ABCEnchance src/exportfuncs.cpp; module-specific hook bodies
 // are added by the feature modules (modules/) into the seams below.
+// The spine owns every detoured original: hook bodies delegate to feature
+// modules and always chain to the original themselves (R-2).
 #include "hooks.h"
 
+#include <cstring>
 #include <vector>
+
+#include <pm_defs.h>
 
 #include <abc/Console.h>
 #include <abc/CvarCmd.h>
@@ -11,73 +16,73 @@
 #include <abc/Task.h>
 
 #include "modules/Module.h"
-#include "modules/AutoFunc/AutoFunc.h"
-#include "modules/AutoFunc/Signals.h"
-#include "modules/Camera/Camera.h"
-#include "modules/Efx/Efx.h"
-#include "modules/ViewModelLag/ViewModelLag.h"
+#include "modules/autofunc/AutoFunc.h"
+#include "modules/autofunc/Signals.h"
+#include "modules/camera/Camera.h"
+#include "modules/fx/Efx.h"
+#include "modules/viewmodellag/ViewModelLag.h"
 #include "services/Config.h"
 #include "services/ExtraPrecache.h"
 #include "services/Version.h"
 
 namespace hooks {
 
-SHookedFuncs gHooks = {};
-engine_studio_api_t gEngineStudio = {};
+HookedFuncs Hooks = {};
+engine_studio_api_t EngineStudio = {};
 
-static std::vector<hook_t*> s_aryEngineHook;
-static std::vector<hook_t*> s_aryClientHook;
+static std::vector<hook_t*> EngineHookList;
+static std::vector<hook_t*> ClientHookList;
 
 #define SIG_LENGTH(sig) (sizeof(sig) - 1)
 #define FILL_SIG(sig, base, size, field) \
-	(gHooks.field) = (decltype(gHooks.field))abc::SigScan((void*)(base), (size), sig, SIG_LENGTH(sig))
+	(Hooks.field) = (decltype(Hooks.field))abc::SigScan((void*)(base), (size), sig, SIG_LENGTH(sig))
 #define SIG_FUNC_NOT_FOUND(field) \
-	if (!(gHooks.field)) abc::SysError("Could not find sig: %s\nEngine buildnum %d", #field, abc::g_dwEngineBuildnum)
+	if (!(Hooks.field)) abc::SysError("Could not find sig: %s\nEngine buildnum %d", #field, abc::g_dwEngineBuildnum)
 
 #pragma region Engine hook bodies
 static void H_R_NewMap() {
 	abcess::moduleRegistry().newMapAll();
-	gHooks.R_NewMap();
+	Hooks.R_NewMap();
 }
 
 static model_t* H_CL_GetModelByIndex(int index) {
-	model_t* pExtra = extraPrecache::getByModelIndex(index);
+	model_t* pExtra = extraprecache::getByModelIndex(index);
 	if (pExtra)
 		return pExtra;
-	return gHooks.CL_GetModelByIndex(index);
+	return Hooks.CL_GetModelByIndex(index);
 }
 
 static void H_R_BloodSprite(float* org, int colorindex, int modelIndex, int modelIndex2, float size) {
-	Efx::R_BloodSprite(org, colorindex, modelIndex, modelIndex2, size);
+	fx::bloodSprite(org, colorindex, modelIndex, modelIndex2, size);
 	// the chain back to the original is always ours (R-2) - also when the
 	// enhancement pass bailed out early
-	gHooks.R_BloodSprite(org, colorindex, modelIndex, modelIndex2, size);
+	Hooks.R_BloodSprite(org, colorindex, modelIndex, modelIndex2, size);
 }
 
 static TEMPENTITY* H_R_TempModel(float* pos, float* dir, float* angles, float life, int modelIndex, int soundtype) {
-	// Efx needs the original entry itself (smoke shell spawns through it),
+	// efx needs the original entry itself (smoke shell spawns through it),
 	// injected as a parameter - modules never read the chain fields
-	return Efx::R_TempModel(pos, dir, angles, life, modelIndex, soundtype, gHooks.R_TempModel);
+	return fx::tempModel(pos, dir, angles, life, modelIndex, soundtype, Hooks.R_TempModel);
 }
 
 static void H_pfnPlaybackEvent(int flags, const struct edict_s* pInvoker, unsigned short eventindex,
 	float delay, float* origin, float* angles, float fparam1, float fparam2, int iparam1, int iparam2,
 	int bparam1, int bparam2) {
-	if (Efx::pfnPlaybackEvent(flags, pInvoker, eventindex, delay, origin, angles,
+	if (fx::playbackEvent(flags, pInvoker, eventindex, delay, origin, angles,
 		fparam1, fparam2, iparam1, iparam2, bparam1, bparam2))
 		return;
-	gHooks.pfnPlaybackEvent(flags, pInvoker, eventindex, delay, origin, angles,
+	Hooks.pfnPlaybackEvent(flags, pInvoker, eventindex, delay, origin, angles,
 		fparam1, fparam2, iparam1, iparam2, bparam1, bparam2);
 }
 
 static void __fastcall H_CClient_SoundEngine_Initialize(void* pSoundEngine, int dummy) {
-	gHooks.pClientSoundEngine = pSoundEngine;
-	gHooks.CClient_SoundEngine_Initialize(pSoundEngine, dummy);
+	Hooks.ClientSoundEngine = pSoundEngine;
+	Hooks.CClient_SoundEngine_Initialize(pSoundEngine, dummy);
 }
 #pragma endregion
 
 #pragma region Export-table thunks (chained)
-static void RegisterGlobalCvars() {
+static void registerGlobalCvars() {
 	// read-only version stamp: any write snaps back (old PLUGIN_VERSION cvar)
 	abc::CREATE_CVAR("abc_version", abcess::kVersion, FCVAR_EXTDLL | FCVAR_CLIENTDLL, [](cvar_t* cvar) {
 		abc::CVAR_SET_STRING("abc_version", abcess::kVersion);
@@ -91,7 +96,7 @@ static void H_HUD_Init() {
 		s_bInitialized = true;
 		// cvar/command registration happens at HUD_Init time (client ready),
 		// the proven point from ABCEnchance (08 §4.9).
-		RegisterGlobalCvars();
+		registerGlobalCvars();
 		abcess::moduleRegistry().initAll();
 	}
 	gExportfuncs.HUD_Init();
@@ -116,59 +121,57 @@ static void H_HUD_Frame(double frametime) {
 
 static void H_HUD_Shutdown() {
 	abcess::moduleRegistry().shutdownAll();
-	abcess::SaveConfig();
+	abcess::saveConfig();
 	gExportfuncs.HUD_Shutdown();
-	UninstallClientHooks();
+	uninstallClientHooks();
 }
 
 static int H_HUD_GetStudioModelInterface(int version, struct r_studio_interface_s** ppinterface, struct engine_studio_api_s* pstudio) {
-	memcpy(&gEngineStudio, pstudio, sizeof(gEngineStudio));
-	extraPrecache::setEngineStudio(pstudio);
+	memcpy(&EngineStudio, pstudio, sizeof(EngineStudio));
+	extraprecache::setEngineStudio(pstudio);
 	return gExportfuncs.HUD_GetStudioModelInterface(version, ppinterface, pstudio);
 }
 
 static int H_HUD_UpdateClientData(struct client_data_s* c, float f) {
-	ViewModelLag::OnUpdateClientData(c);
+	viewmodellag::onUpdateClientData(c);
 	return gExportfuncs.HUD_UpdateClientData(c, f);
 }
 
 static void H_HUD_PlayerMove(struct playermove_s* ppmove, qboolean server) {
 	gExportfuncs.HUD_PlayerMove(ppmove, server);
-	AutoFunc::OnPlayerMove(ppmove->waterlevel > 1, ppmove->onground != -1, ppmove->movetype == MOVETYPE_WALK);
+	autofunc::onPlayerMove(ppmove->waterlevel > 1, ppmove->onground != -1, ppmove->movetype == MOVETYPE_WALK);
 }
 
 static void H_HUD_TxferPredictionData(struct entity_state_s* ps, const struct entity_state_s* pps,
 	struct clientdata_s* pcd, const struct clientdata_s* ppcd, struct weapon_data_s* wd, const struct weapon_data_s* pwd) {
-	Signals::OnTxferPredictionData(wd);
+	signals::onTxferPredictionData(wd);
 	gExportfuncs.HUD_TxferPredictionData(ps, pps, pcd, ppcd, wd, pwd);
 }
 
 static void H_CL_CreateMove(float frametime, struct usercmd_s* cmd, int active) {
 	gExportfuncs.CL_CreateMove(frametime, cmd, active);
-	AutoFunc::AutoJump(cmd);
-	AutoFunc::DuckTap(cmd);
+	autofunc::autoJump(cmd);
+	autofunc::duckTap(cmd);
 }
 
 static void H_V_CalcRefdef(struct ref_params_s* pparams) {
 	// nextView is zeroed by the client dll - chain first (old order)
 	gExportfuncs.V_CalcRefdef(pparams);
-	if (!gExportfuncs.CL_IsThirdPerson()) {
-		ViewModelLag::CalcRefdef(pparams);
-	}
-	else {
-		Camera::CalcRefdef(pparams);
-	}
+	if (!gExportfuncs.CL_IsThirdPerson())
+		viewmodellag::calcRefdef(pparams);
+	else
+		camera::calcRefdef(pparams);
 }
 
 static int H_HUD_AddEntity(int type, struct cl_entity_s* ent, const char* modelname) {
-	if (Efx::AddEntity(type, ent))
+	if (fx::addEntity(type, ent))
 		return 0;
 	return gExportfuncs.HUD_AddEntity(type, ent, modelname);
 }
 #pragma endregion
 
 #pragma region Fill / Install / Uninstall
-void FillEngineAddress() {
+void fillEngineAddress() {
 	auto engineFactory = Sys_GetFactory((HINTERFACEMODULE)abc::g_dwEngineBase);
 	if (engineFactory && engineFactory("EngineSurface007", nullptr)) {
 #define R_NEWMAP_SIG "\x55\x8B\xEC\x51\xC7\x45\xFC\x00\x00\x00\x00\xEB\x2A\x8B\x45\xFC\x83\xC0\x01\x89\x45\xFC\x81\x7D\xFC\x00\x01\x00\x00"
@@ -180,21 +183,21 @@ void FillEngineAddress() {
 	}
 }
 
-void InstallEngineHooks() {
+void installEngineHooks() {
 	// engine efx API, detoured in place
-	gHooks.R_BloodSprite = gEngfuncs.pEfxAPI->R_BloodSprite;
-	s_aryEngineHook.push_back(g_pMetaHookAPI->InlineHook((void*)gHooks.R_BloodSprite, H_R_BloodSprite, (void**)&gHooks.R_BloodSprite));
-	gHooks.R_TempModel = gEngfuncs.pEfxAPI->R_TempModel;
-	s_aryEngineHook.push_back(g_pMetaHookAPI->InlineHook((void*)gHooks.R_TempModel, H_R_TempModel, (void**)&gHooks.R_TempModel));
+	Hooks.R_BloodSprite = gEngfuncs.pEfxAPI->R_BloodSprite;
+	EngineHookList.push_back(g_pMetaHookAPI->InlineHook((void*)Hooks.R_BloodSprite, H_R_BloodSprite, (void**)&Hooks.R_BloodSprite));
+	Hooks.R_TempModel = gEngfuncs.pEfxAPI->R_TempModel;
+	EngineHookList.push_back(g_pMetaHookAPI->InlineHook((void*)Hooks.R_TempModel, H_R_TempModel, (void**)&Hooks.R_TempModel));
 	// engine engfunc, detoured
-	gHooks.pfnPlaybackEvent = gEngfuncs.pfnPlaybackEvent;
-	s_aryEngineHook.push_back(g_pMetaHookAPI->InlineHook((void*)gHooks.pfnPlaybackEvent, H_pfnPlaybackEvent, (void**)&gHooks.pfnPlaybackEvent));
+	Hooks.pfnPlaybackEvent = gEngfuncs.pfnPlaybackEvent;
+	EngineHookList.push_back(g_pMetaHookAPI->InlineHook((void*)Hooks.pfnPlaybackEvent, H_pfnPlaybackEvent, (void**)&Hooks.pfnPlaybackEvent));
 	// engine sig-scanned, detoured
-	s_aryEngineHook.push_back(g_pMetaHookAPI->InlineHook((void*)gHooks.R_NewMap, H_R_NewMap, (void**)&gHooks.R_NewMap));
-	s_aryEngineHook.push_back(g_pMetaHookAPI->InlineHook((void*)gHooks.CL_GetModelByIndex, H_CL_GetModelByIndex, (void**)&gHooks.CL_GetModelByIndex));
+	EngineHookList.push_back(g_pMetaHookAPI->InlineHook((void*)Hooks.R_NewMap, H_R_NewMap, (void**)&Hooks.R_NewMap));
+	EngineHookList.push_back(g_pMetaHookAPI->InlineHook((void*)Hooks.CL_GetModelByIndex, H_CL_GetModelByIndex, (void**)&Hooks.CL_GetModelByIndex));
 }
 
-void FillClientAddress() {
+void fillClientAddress() {
 #define V_PUNCHAXIS_SIG "\x8B\x44\x24\x04\xF3\x0F\x10\x44\x24\x08\xF3\x0F\x11\x04\x85\x2A\x2A\x2A\x2A\xC3\xCC"
 	FILL_SIG(V_PUNCHAXIS_SIG, abc::g_dwClientBase, abc::g_dwClientSize, V_PunchAxis);
 	SIG_FUNC_NOT_FOUND(V_PunchAxis);
@@ -206,32 +209,32 @@ void FillClientAddress() {
 	SIG_FUNC_NOT_FOUND(CClient_SoundEngine_PlayFMODSound);
 }
 
-void InstallClientHooks() {
+void installClientHooks() {
 	// CClient_SoundEngine_Initialize detour captures the FMOD wrapper "this";
 	// PlayFMODSound stays unhooked (the old detour only hosted the NetEase
 	// music branch, which is not migrated) and is called directly.
-	s_aryClientHook.push_back(g_pMetaHookAPI->InlineHook((void*)gHooks.CClient_SoundEngine_Initialize,
-		H_CClient_SoundEngine_Initialize, (void**)&gHooks.CClient_SoundEngine_Initialize));
+	ClientHookList.push_back(g_pMetaHookAPI->InlineHook((void*)Hooks.CClient_SoundEngine_Initialize,
+		H_CClient_SoundEngine_Initialize, (void**)&Hooks.CClient_SoundEngine_Initialize));
 }
 
-void UninstallEngineHooks() {
-	for (hook_t* h : s_aryEngineHook) {
+void uninstallEngineHooks() {
+	for (hook_t* h : EngineHookList) {
 		if (h)
 			g_pMetaHookAPI->UnHook(h);
 	}
-	s_aryEngineHook.clear();
+	EngineHookList.clear();
 }
 
-void UninstallClientHooks() {
-	for (hook_t* h : s_aryClientHook) {
+void uninstallClientHooks() {
+	for (hook_t* h : ClientHookList) {
 		if (h)
 			g_pMetaHookAPI->UnHook(h);
 	}
-	s_aryClientHook.clear();
+	ClientHookList.clear();
 }
 #pragma endregion
 
-void AttachExports(cl_exportfuncs_t* pExportFuncs) {
+void attachExports(cl_exportfuncs_t* pExportFuncs) {
 	pExportFuncs->HUD_Init = H_HUD_Init;
 	pExportFuncs->HUD_VidInit = H_HUD_VidInit;
 	pExportFuncs->HUD_Frame = H_HUD_Frame;
