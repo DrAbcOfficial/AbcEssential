@@ -28,7 +28,6 @@
 namespace hooks {
 
 HookedFuncs Hooks = {};
-engine_studio_api_t EngineStudio = {};
 
 static std::vector<hook_t*> EngineHookList;
 static std::vector<hook_t*> ClientHookList;
@@ -90,10 +89,10 @@ static void registerGlobalCvars() {
 }
 
 static void H_HUD_Init() {
-	static bool s_bInitialized = false;
-	const bool first = !s_bInitialized;
+	static bool Initialized = false;
+	const bool first = !Initialized;
 	if (first) {
-		s_bInitialized = true;
+		Initialized = true;
 		// cvar/command registration happens at HUD_Init time (client ready),
 		// the proven point from ABCEnchance (08 §4.9).
 		registerGlobalCvars();
@@ -127,7 +126,6 @@ static void H_HUD_Shutdown() {
 }
 
 static int H_HUD_GetStudioModelInterface(int version, struct r_studio_interface_s** ppinterface, struct engine_studio_api_s* pstudio) {
-	memcpy(&EngineStudio, pstudio, sizeof(EngineStudio));
 	extraprecache::setEngineStudio(pstudio);
 	return gExportfuncs.HUD_GetStudioModelInterface(version, ppinterface, pstudio);
 }

@@ -49,10 +49,6 @@ struct HookedFuncs {
 };
 extern HookedFuncs Hooks;
 
-// engine_studio_api_t as handed to HUD_GetStudioModelInterface; the extra
-// precache service gets its own copy pushed (services/ExtraPrecache.h).
-extern engine_studio_api_t EngineStudio;
-
 // LoadEngine time (no cvar/command registration here - 08 §4.9 red line).
 void fillEngineAddress();
 void installEngineHooks();
