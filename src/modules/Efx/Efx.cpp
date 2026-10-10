@@ -407,11 +407,10 @@ void R_BloodSprite(float* org, int colorindex, int modelIndex, int modelIndex2, 
 			}
 		}
 	}
-	hooks::gHooks.R_BloodSprite(org, colorindex, modelIndex, modelIndex2, size);
 }
 
-TEMPENTITY* R_TempModel(float* pos, float* dir, float* angles, float life, int modelIndex, int soundtype) {
-	TEMPENTITY* tent = hooks::gHooks.R_TempModel(pos, dir, angles, life, modelIndex, soundtype);
+TEMPENTITY* R_TempModel(float* pos, float* dir, float* angles, float life, int modelIndex, int soundtype, RTempModelFn original) {
+	TEMPENTITY* tent = original(pos, dir, angles, life, modelIndex, soundtype);
 	if (tent && s_pShellEfx->value > 0 && soundtype > 0) {
 		tent->flags |= FTENT_COLLIDEALL | FTENT_SLOWGRAVITY | FTENT_CLIENTCUSTOM;
 		tent->entity.curstate.rendermode = kRenderTransTexture;
@@ -422,7 +421,7 @@ TEMPENTITY* R_TempModel(float* pos, float* dir, float* angles, float life, int m
 		};
 		vec3_t smokedir = { dir[0], dir[1], CMathlib::RANDOM_FLOAT(70, 155) };
 		// smoke goes through the original entry point: no re-enhancement loop
-		TEMPENTITY* smoke = hooks::gHooks.R_TempModel(pos, smokedir, angles, life / 2, s_EfxVariable.iGunSmoke, 0);
+		TEMPENTITY* smoke = original(pos, smokedir, angles, life / 2, s_EfxVariable.iGunSmoke, 0);
 		if (smoke) {
 			smoke->flags = FTENT_SPRANIMATE | FTENT_FADEOUT;
 			smoke->entity.baseline.scale = CMathlib::RANDOM_FLOAT(0.07f, 0.15f);
@@ -435,26 +434,21 @@ TEMPENTITY* R_TempModel(float* pos, float* dir, float* angles, float life, int m
 	return tent;
 }
 
-void pfnPlaybackEvent(int flags, const struct edict_s* pInvoker, unsigned short eventindex, float delay,
+bool pfnPlaybackEvent(int flags, const struct edict_s* pInvoker, unsigned short eventindex, float delay,
 	float* origin, float* angles, float fparam1, float fparam2, int iparam1, int iparam2, int bparam1, int bparam2) {
 	// 高斯主开火 flag 3, index 12;高斯转轮 flag1, index 13
-	switch (eventindex) {
-		case 12: {
-			if (s_pGaussEfx->value > 0) {
-				EV_StopPreviousGauss();
-				gEngfuncs.pEventAPI->EV_WeaponAnimation(6, 0);
-				auto view = gEngfuncs.GetViewModel();
-				hooks::gHooks.CClient_SoundEngine_PlayFMODSound(hooks::gHooks.pClientSoundEngine, 0, 0, view->index, view->origin,
-					CHAN_WEAPON, "weapons/gauss2.wav", 1.0f, 1.0f, 0, 100, -1, 0.0f);
-				hooks::gHooks.V_PunchAxis(0, -1.5f);
-				// f1 伤害;b1 是否为副开火
-				DoGaussFire(fparam1, bparam1);
-				return;
-			}
-		}
+	if (eventindex == 12 && s_pGaussEfx->value > 0) {
+		EV_StopPreviousGauss();
+		gEngfuncs.pEventAPI->EV_WeaponAnimation(6, 0);
+		auto view = gEngfuncs.GetViewModel();
+		hooks::gHooks.CClient_SoundEngine_PlayFMODSound(hooks::gHooks.pClientSoundEngine, 0, 0, view->index, view->origin,
+			CHAN_WEAPON, "weapons/gauss2.wav", 1.0f, 1.0f, 0, 100, -1, 0.0f);
+		hooks::gHooks.V_PunchAxis(0, -1.5f);
+		// f1 伤害;b1 是否为副开火
+		DoGaussFire(fparam1, bparam1);
+		return true;
 	}
-	hooks::gHooks.pfnPlaybackEvent(flags, pInvoker, eventindex, delay, origin, angles,
-		fparam1, fparam2, iparam1, iparam2, bparam1, bparam2);
+	return false;
 }
 
 bool AddEntity(int type, struct cl_entity_s* ent) {

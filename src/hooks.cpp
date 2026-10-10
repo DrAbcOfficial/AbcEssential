@@ -47,16 +47,24 @@ static model_t* H_CL_GetModelByIndex(int index) {
 
 static void H_R_BloodSprite(float* org, int colorindex, int modelIndex, int modelIndex2, float size) {
 	Efx::R_BloodSprite(org, colorindex, modelIndex, modelIndex2, size);
+	// the chain back to the original is always ours (R-2) - also when the
+	// enhancement pass bailed out early
+	gHooks.R_BloodSprite(org, colorindex, modelIndex, modelIndex2, size);
 }
 
 static TEMPENTITY* H_R_TempModel(float* pos, float* dir, float* angles, float life, int modelIndex, int soundtype) {
-	return Efx::R_TempModel(pos, dir, angles, life, modelIndex, soundtype);
+	// Efx needs the original entry itself (smoke shell spawns through it),
+	// injected as a parameter - modules never read the chain fields
+	return Efx::R_TempModel(pos, dir, angles, life, modelIndex, soundtype, gHooks.R_TempModel);
 }
 
 static void H_pfnPlaybackEvent(int flags, const struct edict_s* pInvoker, unsigned short eventindex,
 	float delay, float* origin, float* angles, float fparam1, float fparam2, int iparam1, int iparam2,
 	int bparam1, int bparam2) {
-	Efx::pfnPlaybackEvent(flags, pInvoker, eventindex, delay, origin, angles,
+	if (Efx::pfnPlaybackEvent(flags, pInvoker, eventindex, delay, origin, angles,
+		fparam1, fparam2, iparam1, iparam2, bparam1, bparam2))
+		return;
+	gHooks.pfnPlaybackEvent(flags, pInvoker, eventindex, delay, origin, angles,
 		fparam1, fparam2, iparam1, iparam2, bparam1, bparam2);
 }
 

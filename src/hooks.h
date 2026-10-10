@@ -23,22 +23,28 @@ constexpr char ABCESS_VERSION[] = "0.2.0";
 
 // Originals + scanned addresses, filled by FillEngineAddress/FillClientAddress
 // and detoured by InstallEngineHooks/InstallClientHooks.
+//
+// Field ownership (R-2, Phase 2 audit): CHAIN-OWNED fields (detoured) may
+// only be called from src/hooks.cpp - chaining back to the original is the
+// spine's job, modules never touch them (an original the module needs is
+// injected as a parameter instead). DIRECT-CALL fields (sig-scanned, no
+// detour) carry no chain and may be used by modules freely.
 struct SHookedFuncs {
-	// engine efx API originals (detoured in place)
+	// chain-owned: engine efx API originals (detoured in place)
 	void (*R_BloodSprite)(float* org, int colorindex, int modelIndex, int modelIndex2, float size);
 	TEMPENTITY* (*R_TempModel)(float* pos, float* dir, float* angles, float life, int modelIndex, int soundtype);
-	// engine engfuncs original (detoured)
+	// chain-owned: engine engfunc original (detoured)
 	void (*pfnPlaybackEvent)(int flags, const struct edict_s* pInvoker, unsigned short eventindex, float delay, float* origin, float* angles,
 		float fparam1, float fparam2, int iparam1, int iparam2, int bparam1, int bparam2);
-	// engine sig-scanned originals (detoured)
+	// chain-owned: engine sig-scanned originals (detoured)
 	void (*R_NewMap)();
 	model_t* (*CL_GetModelByIndex)(int index);
-	// client.dll sig-scanned, direct call only (no detour needed)
-	void (*V_PunchAxis)(int axis, float punch);
+	// chain-owned: client.dll detoured only to capture pClientSoundEngine
+	void (__fastcall* CClient_SoundEngine_Initialize)(void* pSoundEngine, int dummy);
+	// direct-call: client.dll sig-scanned, no detour
 	void (__fastcall* CClient_SoundEngine_PlayFMODSound)(void* pSoundEngine, int dummy, int flags, int entindex, float* origin,
 		int channel, const char* name, float fvol, float attenuation, int extraflags, int pitch, int sentenceIndex, float soundLength);
-	// client.dll sig-scanned, detoured only to capture pClientSoundEngine
-	void (__fastcall* CClient_SoundEngine_Initialize)(void* pSoundEngine, int dummy);
+	void (*V_PunchAxis)(int axis, float punch);
 	// captured by the CClient_SoundEngine_Initialize detour ("this" of the FMOD wrapper)
 	void* pClientSoundEngine;
 };
