@@ -21,6 +21,7 @@
 #include <abc/Plugin.h>
 
 #include "../../Config.h"
+#include "../Module.h"
 
 namespace {
 
@@ -77,4 +78,14 @@ void Models::Init() {
 		}
 		PrintModelList(gEngfuncs.Cmd_Argv(1));
 	});
+}
+
+namespace {
+class ModelsModule final : public abcess::IFeatureModule {
+public:
+	ModelsModule() { abcess::moduleRegistry().add(this); }
+	const char* name() const override { return "models"; }
+	void onInit() override { Models::Init(); }
+};
+const ModelsModule RegisterModule;
 }

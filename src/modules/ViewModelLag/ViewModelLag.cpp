@@ -19,6 +19,8 @@
 #include <abc/CvarCmd.h>
 #include <abc/Math.h>
 
+#include "../Module.h"
+
 namespace {
 
 using abc::CMathlib;
@@ -162,4 +164,15 @@ void ViewModelLag::CalcRefdef(ref_params_t* pparams) {
 	CMathlib::VectorCopy(viewOrigin, view->origin);
 	CMathlib::VectorCopy(viewAngles, view->angles);
 	CalcModelSlide(pparams);
+}
+
+namespace {
+class ViewModelLagModule final : public abcess::IFeatureModule {
+public:
+	ViewModelLagModule() { abcess::moduleRegistry().add(this); }
+	const char* name() const override { return "viewmodellag"; }
+	void onInit() override { ViewModelLag::Init(); }
+	void onVidInit() override { ViewModelLag::VidInit(); }
+};
+const ViewModelLagModule RegisterModule;
 }

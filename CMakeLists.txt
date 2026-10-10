@@ -13,6 +13,7 @@ add_library(AbcEssential MODULE
     src/plugins.cpp
     src/hooks.cpp
     src/Config.cpp
+    src/modules/Module.cpp
     src/modules/Find/Find.cpp
     src/modules/Models/Models.cpp
     src/modules/AutoFunc/AutoFunc.cpp

@@ -27,6 +27,7 @@
 #include "ExtraPrecache.h"
 #include "Palette.h"
 #include "../../hooks.h"
+#include "../Module.h"
 
 #define GAUSS_WAVE_LENGTH 48
 #define GAUSS_LASER_P_WIDTH 2
@@ -499,4 +500,16 @@ bool AddEntity(int type, struct cl_entity_s* ent) {
 	return false;
 }
 
+}
+
+namespace {
+class EfxModule final : public abcess::IFeatureModule {
+public:
+	EfxModule() { abcess::moduleRegistry().add(this); }
+	const char* name() const override { return "efx"; }
+	void onInit() override { Efx::Init(); }
+	void onNewMap() override { Efx::Reset(); }
+	void onFrame() override { Efx::Frame(); }
+};
+const EfxModule RegisterModule;
 }

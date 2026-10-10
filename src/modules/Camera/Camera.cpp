@@ -10,6 +10,8 @@
 #include <abc/CvarCmd.h>
 #include <abc/Math.h>
 
+#include "../Module.h"
+
 namespace {
 
 using abc::CMathlib;
@@ -31,4 +33,14 @@ void Camera::CalcRefdef(ref_params_t* pparams) {
 	pparams->vieworg[0] += vecRight[0];
 	pparams->vieworg[1] += vecRight[1];
 	pparams->vieworg[2] += s_pCamIdealHeight->value + vecRight[2];
+}
+
+namespace {
+class CameraModule final : public abcess::IFeatureModule {
+public:
+	CameraModule() { abcess::moduleRegistry().add(this); }
+	const char* name() const override { return "camera"; }
+	void onInit() override { Camera::Init(); }
+};
+const CameraModule RegisterModule;
 }

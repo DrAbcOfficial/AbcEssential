@@ -9,6 +9,8 @@
 
 #include <abc/CvarCmd.h>
 
+#include "../Module.h"
+
 void Find::Init() {
 	abc::ADD_COMMAND("find", []() {
 		if (gEngfuncs.Cmd_Argc() <= 1)
@@ -33,4 +35,14 @@ void Find::Init() {
 		}
 		gEngfuncs.Con_Printf("==============\n");
 	});
+}
+
+namespace {
+class FindModule final : public abcess::IFeatureModule {
+public:
+	FindModule() { abcess::moduleRegistry().add(this); }
+	const char* name() const override { return "find"; }
+	void onInit() override { Find::Init(); }
+};
+const FindModule RegisterModule;
 }

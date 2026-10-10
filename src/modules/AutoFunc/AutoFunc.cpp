@@ -28,6 +28,7 @@
 
 #include "MsgReader.h"
 #include "../../Config.h"
+#include "../Module.h"
 
 namespace {
 
@@ -363,3 +364,15 @@ void AutoFunc::TriggerEvent(const char* eventname,
 	}
 }
 #pragma endregion
+
+namespace {
+class AutoFuncModule final : public abcess::IFeatureModule {
+public:
+	AutoFuncModule() { abcess::moduleRegistry().add(this); }
+	const char* name() const override { return "autofunc"; }
+	void onPostInit() override { AutoFunc::Init(); }
+	void onVidInit() override { AutoFunc::ResetWeapons(); }
+	void onShutdown() override { AutoFunc::Exit(); }
+};
+const AutoFuncModule RegisterModule;
+}

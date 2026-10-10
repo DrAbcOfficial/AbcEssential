@@ -11,12 +11,11 @@
 #include <abc/Task.h>
 
 #include "Config.h"
+#include "modules/Module.h"
 #include "modules/AutoFunc/AutoFunc.h"
 #include "modules/Camera/Camera.h"
 #include "modules/Efx/Efx.h"
 #include "modules/Efx/ExtraPrecache.h"
-#include "modules/Find/Find.h"
-#include "modules/Models/Models.h"
 #include "modules/ViewModelLag/ViewModelLag.h"
 
 namespace hooks {
@@ -35,7 +34,7 @@ static std::vector<hook_t*> s_aryClientHook;
 
 #pragma region Engine hook bodies
 static void H_R_NewMap() {
-	Efx::Reset();
+	abcess::moduleRegistry().newMapAll();
 	gHooks.R_NewMap();
 }
 
@@ -76,31 +75,25 @@ static void RegisterGlobalCvars() {
 }
 
 static void H_HUD_Init() {
-	static bool s_bRegistered = false;
-	if (!s_bRegistered) {
+	static bool s_bInitialized = false;
+	const bool first = !s_bInitialized;
+	if (first) {
+		s_bInitialized = true;
 		// cvar/command registration happens at HUD_Init time (client ready),
 		// the proven point from ABCEnchance (08 §4.9).
-		s_bRegistered = true;
 		RegisterGlobalCvars();
-		Find::Init();
-		Models::Init();
-		ViewModelLag::Init();
-		Camera::Init();
-		Efx::Init();
+		abcess::moduleRegistry().initAll();
 	}
 	gExportfuncs.HUD_Init();
-	// AutoFunc replays persisted concurrent/event bindings after the base HUD
-	// has registered its own commands (old code ordered it the same way).
-	static bool s_bPostChainInit = false;
-	if (!s_bPostChainInit) {
-		s_bPostChainInit = true;
-		AutoFunc::Init();
-	}
+	// post-chain init: bindings that reference base-HUD commands (AutoFunc
+	// replays persisted concurrent/event bindings after the base HUD has
+	// registered its own commands - old code ordered it the same way).
+	if (first)
+		abcess::moduleRegistry().postInitAll();
 }
 
 static int H_HUD_VidInit() {
-	AutoFunc::ResetWeapons();
-	ViewModelLag::VidInit();
+	abcess::moduleRegistry().vidInitAll();
 	return gExportfuncs.HUD_VidInit();
 }
 
@@ -108,11 +101,11 @@ static void H_HUD_Frame(double frametime) {
 	gExportfuncs.HUD_Frame(frametime);
 	// pump main-thread continuations (abc::Task / DispatchToMainThread)
 	abc::GetTaskManager()->CheckAll();
-	Efx::Frame();
+	abcess::moduleRegistry().frameAll();
 }
 
 static void H_HUD_Shutdown() {
-	AutoFunc::Exit();
+	abcess::moduleRegistry().shutdownAll();
 	abcess::SaveConfig();
 	gExportfuncs.HUD_Shutdown();
 	UninstallClientHooks();
