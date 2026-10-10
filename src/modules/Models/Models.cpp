@@ -17,6 +17,7 @@
 
 #include <Interface/IFileSystem.h>
 
+#include <abc/Console.h>
 #include <abc/CvarCmd.h>
 #include <abc/Plugin.h>
 
@@ -27,11 +28,12 @@ namespace {
 
 void PrintModelList(const char* prefix) {
 	std::string wildcard = std::string("models/player/") + prefix + "*.*";
-	gEngfuncs.Con_Printf("Models\n==============\n");
+	abc::ConsolePrint("Models\n==============\n");
 	FileFindHandle_t walk;
 	const char* pszFileName = abc::g_pFileSystem->FindFirst(wildcard.c_str(), &walk);
 	if (!pszFileName) {
-		gEngfuncs.Con_Printf("!!!Nothing!!!\n==============\n");
+		abc::ConsoleWarn("models: nothing found (%s)\n", wildcard.c_str());
+		abc::ConsolePrint("==============\n");
 		return;
 	}
 	std::vector<std::string> names;
@@ -49,8 +51,8 @@ void PrintModelList(const char* prefix) {
 		return a < b;
 	});
 	for (const auto& name : names)
-		gEngfuncs.Con_Printf("%s %s\n", favs.count(name) ? "*" : " ", name.c_str());
-	gEngfuncs.Con_Printf("==============\n");
+		abc::ConsolePrint("%s %s\n", favs.count(name) ? "*" : " ", name.c_str());
+	abc::ConsolePrint("==============\n");
 }
 
 }
@@ -67,11 +69,11 @@ void Models::Init() {
 			auto& favs = abcess::Config()->m_aryFavModels;
 			if (op == "fav") {
 				favs.insert(name);
-				gEngfuncs.Con_Printf("* %s\n", name.c_str());
+				abc::ConsolePrint("* %s\n", name.c_str());
 			}
 			else {
 				favs.erase(name);
-				gEngfuncs.Con_Printf("  %s\n", name.c_str());
+				abc::ConsolePrint("  %s\n", name.c_str());
 			}
 			abcess::SaveConfig();
 			return;
