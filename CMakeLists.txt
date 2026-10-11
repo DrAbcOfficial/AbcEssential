@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 4.2)
 
 project(AbcEssential LANGUAGES CXX)
 
@@ -37,6 +37,7 @@ if(ABC_GAME_DIR)
         RUNTIME DESTINATION "${ABC_GAME_DIR}/svencoop/metahook/plugins"
         LIBRARY DESTINATION "${ABC_GAME_DIR}/svencoop/metahook/plugins")
     add_custom_target(deploy
+        DEPENDS AbcEssential
         COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}" --config "$<CONFIG>"
         COMMENT "Deploying AbcEssential.dll to ${ABC_GAME_DIR}/svencoop/metahook/plugins")
 endif()
