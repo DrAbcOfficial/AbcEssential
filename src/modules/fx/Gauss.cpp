@@ -32,7 +32,11 @@ constexpr float kGaussLaserPrimaryWidth = 2.0f;
 constexpr float kGaussLaserSecondaryWidth = 4.0f;
 
 void createGaussLoophole(pmtrace_t* trace) {
-	TEMPENTITY* temp = gEngfuncs.pEfxAPI->CL_TempEntAllocHigh(trace->endpos, gEngfuncs.hudGetModelByIndex(Precached.GaussLoophole));
+	model_t* Model = Precached.GaussLoophole >= 0
+		? gEngfuncs.hudGetModelByIndex(Precached.GaussLoophole) : nullptr;
+	if (!Model)
+		return;
+	TEMPENTITY* temp = gEngfuncs.pEfxAPI->CL_TempEntAllocHigh(trace->endpos, Model);
 	if (!temp)
 		return;
 	CMathlib::VectorAngles(trace->plane.normal, temp->entity.angles);
@@ -105,11 +109,11 @@ static void gaussFire(float damage, bool secondary) {
 			gEngfuncs.pEfxAPI->R_BeamPoints(src, trace.endpos, Precached.GaussBeam, 0.2f,
 				secondary ? kGaussLaserPrimaryWidth : kGaussLaserSecondaryWidth, 0, 1, 0, 0, 0, 1,
 				secondary ? 0.8f : 1.0f, secondary ? 0.0f : 1.0f);
-		cl_entity_t* hit = gEngfuncs.GetEntityByIndex(trace.ent);
+		cl_entity_t* hit = gEngfuncs.GetEntityByIndex(gEngfuncs.pEventAPI->EV_IndexFromTrace(&trace));
 		// 命中世界刷子
 		if (hit && hit->model && hit->model->type == mod_brush) {
 			// 生成弹孔模型
-			if (Precached.GaussLoophole)
+			if (Precached.GaussLoophole >= 0)
 				createGaussLoophole(&trace);
 			// 穿透后续实体
 			entIgnore = -1;
@@ -175,9 +179,10 @@ static void gaussFire(float damage, bool secondary) {
 							random[1] = randomSrc[1] + dir[1] * CMathlib::RANDOM_FLOAT(-512, 512);
 							random[2] = randomSrc[2] + dir[2] * CMathlib::RANDOM_FLOAT(-512, 512);
 							gEngfuncs.pEventAPI->EV_SetTraceHull(2);
-							gEngfuncs.pEventAPI->EV_PlayerTrace(randomSrc, random, PM_STUDIO_IGNORE, entIgnore, &beamTrace);
-							if (beamTrace.ent == 0)
-								createGaussLoophole(&beamTrace);
+							pmtrace_t DecorationTrace{};
+							gEngfuncs.pEventAPI->EV_PlayerTrace(randomSrc, random, PM_STUDIO_IGNORE, entIgnore, &DecorationTrace);
+							if (DecorationTrace.ent == 0)
+								createGaussLoophole(&DecorationTrace);
 						}
 						if (thickness < damage) {
 							// 厚度==0 时按 1 处理
