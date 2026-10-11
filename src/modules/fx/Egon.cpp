@@ -109,7 +109,11 @@ void shootEgonParticle() {
 }
 
 bool addEntity(int type, struct cl_entity_s* ent) {
-	if (EgonEfxCvar->value <= 0)
+	if (!EgonEfxCvar || EgonEfxCvar->value <= 0 || !ent || Precached.EgonBeam < 0)
+		return false;
+	model_t* Model = ent->curstate.modelindex > 0
+		? gEngfuncs.hudGetModelByIndex(ent->curstate.modelindex) : nullptr;
+	if (!Model)
 		return false;
 	if (type == ET_BEAM) {
 		int beamType = ent->curstate.rendermode & 0x0F;
@@ -118,7 +122,7 @@ bool addEntity(int type, struct cl_entity_s* ent) {
 			int endEntity = ent->curstate.skin;
 			int entityType = ent->curstate.entityType;
 			if (startEntity == 0 && endEntity > 4096 && entityType == 2 &&
-				!strncmp(gEngfuncs.hudGetModelByIndex(ent->curstate.modelindex)->name, "sprites/xbeam1.spr", 19)) {
+				!strncmp(Model->name, "sprites/xbeam1.spr", 19)) {
 				int beamFlags = (ent->curstate.rendermode & 0xF0);
 				int noise = ent->curstate.body;
 				float scrollRate = ent->curstate.animtime;
@@ -141,7 +145,7 @@ bool addEntity(int type, struct cl_entity_s* ent) {
 	else if (type == ET_NORMAL) {
 		// filter the vanilla egon spark sprites, the particle ball replaces them
 		if (ent->curstate.modelindex > 0 &&
-			!strncmp(gEngfuncs.hudGetModelByIndex(ent->curstate.modelindex)->name, "sprites/XSpark1.spr", 19) &&
+			!strncmp(Model->name, "sprites/XSpark1.spr", 19) &&
 			ent->curstate.entityType == 1 && ent->curstate.scale == 1.0f && ent->curstate.rendermode == 3 && ent->curstate.renderamt == 255 &&
 			ent->curstate.rendercolor.r == 255 && ent->curstate.rendercolor.g == 255 && ent->curstate.rendercolor.b == 255 &&
 			ent->curstate.renderfx == 14 && ent->curstate.movetype == 8) {

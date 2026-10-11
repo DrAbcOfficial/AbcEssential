@@ -4,6 +4,7 @@
 // split out in the Phase 2 audit; the old build derived them from core/events.
 
 #include "AutoFunc.h"
+#include "CommandValidation.h"
 
 #include <map>
 #include <string>
@@ -15,6 +16,9 @@
 
 #include <abc/CvarCmd.h>
 #include <abc/Console.h>
+#include <abc/Events.h>
+#include <memory>
+#include <algorithm>
 
 #include "../../services/Config.h"
 #include "../Module.h"
@@ -27,13 +31,11 @@ namespace {
 cvar_t* AutoJumpCvar = nullptr;
 bool DucktapActive = false;
 
-// concurrent chain: when <target> runs, its <chained> string is issued first,
-// then the original entry point. HookCmd has no uninstall - restoring the
-// saved original re-wires the engine command table back.
 struct ConcurrentCommand {
 	std::string Target;
 	std::string Chained;
-	xcommand_t Original = nullptr;
+	std::unique_ptr<abc::CChainedCommand> Hook;
+	abc::CallbackList<bool()>::Handle Subscription;
 };
 std::map<std::string, ConcurrentCommand> ConcurrentCmds;
 
@@ -45,47 +47,48 @@ struct PlayerMoveState {
 PlayerMoveState PlayerMove = {};
 
 void setConcurrent(const char* target, const char* chained) {
-	if (g_pMetaHookAPI->FindCmd(target) == nullptr)
+	if (!target || !chained || g_pMetaHookAPI->FindCmd(target) == nullptr)
 		return;
-
-	if (!_stricmp(target, "concurrent") || !_stricmp(target, "removeconcurrent")) {
+	const std::string Key = canonicalCommand(target);
+	if (Key == "concurrent" || Key == "removeconcurrent") {
 		abc::ConsoleWriteline("concurrent and removeconcurrent does not support this!\n");
 		return;
 	}
-	//FIXME: yes, this is stupid, but i dont wanna do a parser for now
-	std::string chain = chained;
-	if (chain.find(target) != std::string::npos) {
+	std::map<std::string, std::string> Graph;
+	for (const auto& [Name, Entry] : ConcurrentCmds)
+		if (!Entry.Chained.empty()) Graph.emplace(Name, Entry.Chained);
+	Graph[Key] = chained;
+	if (hasCommandCycle(Graph, Key)) {
 		abc::ConsoleWriteline("There are recursive calls in concurrent command!\n");
 		return;
 	}
-	auto found = ConcurrentCmds.find(target);
-	if (found == ConcurrentCmds.end()) {
-		ConcurrentCommand entry;
-		entry.Target = target;
-		entry.Chained = std::move(chain);
-		entry.Original = g_pMetaHookAPI->HookCmd(target, []() {
-			const char* nowTarget = gEngfuncs.Cmd_Argv(0);
-			auto iter = ConcurrentCmds.find(nowTarget);
-			if (iter != ConcurrentCmds.end()) {
-				gEngfuncs.pfnClientCmd(iter->second.Chained.c_str());
-				iter->second.Original();
-			}
+	if (!ConcurrentCmds.contains(Key) && ConcurrentCmds.size() >= abc::CChainedCommand::kMaxInstances) {
+		abc::ConsoleWarn("concurrent: command capacity reached\n");
+		return;
+	}
+	auto [Found, Inserted] = ConcurrentCmds.try_emplace(Key);
+	auto& Entry = Found->second;
+	if (Inserted) {
+		Entry.Target = target;
+		Entry.Hook = std::make_unique<abc::CChainedCommand>(target);
+		Entry.Subscription = Entry.Hook->Event().append([Key]() {
+			const auto Found = ConcurrentCmds.find(Key);
+			if (Found != ConcurrentCmds.end() && !Found->second.Chained.empty())
+				abc::EngineClientCmd(Found->second.Chained.c_str());
+			return true;
 		});
-		ConcurrentCmds.emplace(target, std::move(entry));
 	}
-	else {
-		found->second.Chained = chained;
-	}
+	Entry.Chained = chained;
 }
 
 void removeConcurrent(const char* target) {
-	auto found = ConcurrentCmds.find(target);
-	if (found != ConcurrentCmds.end()) {
-		g_pMetaHookAPI->HookCmd(found->second.Target.c_str(), found->second.Original);
-		ConcurrentCmds.erase(found);
-	}
-	else
+	const auto Found = ConcurrentCmds.find(canonicalCommand(target ? target : ""));
+	if (Found != ConcurrentCmds.end()) {
+		// Keep the empty hook until shutdown so repeated edits do not consume slots.
+		Found->second.Chained.clear();
+	} else {
 		abc::ConsoleWriteline("There is no concurrent in this command!\n");
+	}
 }
 
 }
@@ -122,8 +125,12 @@ void shutdown() {
 	abcess::AbcEssentialConfig* config = abcess::config();
 	config->ConcurrentCmds.clear();
 	for (auto iter = ConcurrentCmds.begin(); iter != ConcurrentCmds.end(); iter++) {
-		config->ConcurrentCmds.emplace(std::make_pair(iter->first, iter->second.Chained));
+		if (!iter->second.Chained.empty())
+			config->ConcurrentCmds.emplace(iter->second.Target, iter->second.Chained);
 	}
+	ConcurrentCmds.clear();
+	DucktapActive = false;
+	PlayerMove = {};
 }
 
 // Shared air-state edge for autojump/ducktap: the button is released every

@@ -217,7 +217,9 @@ static void gaussFire(float damage, bool secondary) {
 bool playbackEvent(int flags, const struct edict_s* pInvoker, unsigned short eventindex, float delay,
 	float* origin, float* angles, float fparam1, float fparam2, int iparam1, int iparam2, int bparam1, int bparam2) {
 	// 高斯主开火 flag 3, index 12;高斯转轮 flag1, index 13
-	if (eventindex == 12 && GaussEfxCvar->value > 0) {
+	if (eventindex == 12 && GaussEfxCvar->value > 0 &&
+		Precached.GaussBeam >= 0 && Precached.GaussWaveBeam >= 0 &&
+		gEngfuncs.GetLocalPlayer() && gEngfuncs.GetViewModel()) {
 		stopPreviousGaussSound();
 		gEngfuncs.pEventAPI->EV_WeaponAnimation(6, 0);
 		cl_entity_t* view = gEngfuncs.GetViewModel();

@@ -5,6 +5,7 @@
 #include <metahook.h>
 #include <com_model.h>
 #include <r_studioint.h>
+#include <abc/Console.h>
 
 namespace extraprecache {
 
@@ -50,9 +51,11 @@ int precache(const char* path) {
 		return index;
 	if (!Studio || ModelCount >= kMaxModels)
 		return -1;
-	PrecachedModels[ModelCount] = Studio->Mod_ForName(path, true);
-	if (!PrecachedModels[ModelCount])
+	PrecachedModels[ModelCount] = Studio->Mod_ForName(path, false);
+	if (!PrecachedModels[ModelCount]) {
+		abc::ConsoleWarn("[AbcEssential] optional effect asset unavailable: %s\n", path);
 		return -1;
+	}
 	PrecachedModels[ModelCount]->needload = kNeedLoadClient;
 	index = ModelCount + kIndexBase;
 	ModelCount++;

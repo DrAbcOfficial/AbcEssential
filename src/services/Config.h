@@ -16,8 +16,8 @@
 namespace abcess {
 
 struct AbcEssentialConfig {
-	// 0 = pre-Phase-2 file (or absent); bumped on load so the legacy import
-	// runs exactly once even when a Phase 1 acceptance-config already exists.
+	// Version zero or unknown versions are preserved without automatic writes.
+	// A missing file is initialized to version one by loadConfig.
 	int SchemaVersion = 0;
 	std::set<std::string> FavoriteModels;
 	std::map<std::string, std::string> ConcurrentCmds;

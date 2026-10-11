@@ -48,6 +48,7 @@ void init() {
 void newMap() {
 	extraprecache::clear();
 	EgonMessageNum = 0;
+	EgonShooter = false;
 	EgonNextShoot = 0;
 	Precached.GaussBeam = extraprecache::precache("sprites/laserbeam.spr");
 	Precached.GaussWaveBeam = extraprecache::precache("abcenchance/spr/gauss_wave.spr");
@@ -58,7 +59,8 @@ void newMap() {
 
 void frame() {
 	cl_entity_t* local = gEngfuncs.GetLocalPlayer();
-	if (local && EgonMessageNum != local->curstate.messagenum)
+	if (!local || !EgonEfxCvar || EgonEfxCvar->value <= 0 ||
+		EgonMessageNum != local->curstate.messagenum)
 		EgonShooter = false;
 	if (EgonShooter && gEngfuncs.GetClientTime() >= EgonNextShoot)
 		shootEgonParticle();

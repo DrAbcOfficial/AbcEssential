@@ -10,6 +10,11 @@ ModuleRegistry& moduleRegistry() {
 }
 
 void ModuleRegistry::add(IFeatureModule* module) {
+	if (!module)
+		return;
+	for (size_t i = 0; i < Count; ++i)
+		if (Modules[i] == module)
+			return;
 	if (Count >= kMaxModules) {
 		abc::ConsoleWarn("[AbcEssential] module registry full (%zu), '%s' not registered\n",
 			kMaxModules, module->name());
