@@ -7,6 +7,7 @@
 // resolved from WeaponList messages.
 
 #include "Signals.h"
+#include "SignalValidation.h"
 
 #include <algorithm>
 #include <array>
@@ -29,16 +30,6 @@ namespace signals {
 namespace {
 
 constexpr int kMaxWeapons = 64; // weapon_data_t weapondata[64] (entity_state.h)
-
-constexpr std::array<const char*, 7> kEventNames = {
-	kEventDeath,
-	kEventDamage,
-	kEventHealth,
-	kEventBattery,
-	kEventFlashBattery,
-	kEventAddWeapon,
-	kEventDropWeapon
-};
 
 std::map<std::string, std::string> EventCmds;
 std::array<std::string, kMaxWeapons> WeaponNames;
@@ -77,6 +68,11 @@ DEFINE_SIGNAL_HOOK(WeaponList)
 	// iFlags omitted: we only need id -> name
 	if (!msg.ok() || weaponId <= 0 || weaponId >= kMaxWeapons)
 		return CHAIN_ORIGINAL(WeaponList);
+	if (!isWeaponIdentifier(name)) {
+		WeaponNames[weaponId].clear();
+		abc::ConsoleWarn("[AbcEssential] rejected unsafe weapon identifier for id %d\n", weaponId);
+		return CHAIN_ORIGINAL(WeaponList);
+	}
 	WeaponNames[weaponId] = name;
 	return CHAIN_ORIGINAL(WeaponList);
 }
@@ -163,7 +159,7 @@ void init() {
 			abc::ConsoleWriteline("events [operate] [event] [cmd]\n");
 			abc::ConsoleWriteline("operate: 0 = delete, 1 = set\n");
 			abc::ConsoleWriteline("available events:\n");
-			for (const char* name : kEventNames) {
+			for (std::string_view name : kEventNames) {
 				std::string line = "    [";
 				line += name;
 				line += "]\n";
@@ -176,7 +172,7 @@ void init() {
 			return;
 		}
 		const char* evt = gEngfuncs.Cmd_Argv(2);
-		if (std::find(kEventNames.begin(), kEventNames.end(), evt) == kEventNames.end()) {
+		if (!evt || !isEventName(evt)) {
 			usage();
 			return;
 		}
