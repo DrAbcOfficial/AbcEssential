@@ -32,6 +32,9 @@ add_library(AbcEssential MODULE
 target_compile_definitions(AbcEssential PRIVATE WIN32 _WINDOWS _USRDLL _CRT_SECURE_NO_WARNINGS)
 target_link_libraries(AbcEssential PRIVATE Abc::Core)
 
+include("${ABC_CORE_DIR}/cmake/AbcGameData.cmake")
+abc_add_gamedata(AbcEssential "${CMAKE_CURRENT_SOURCE_DIR}/scripts/manifests/abcessential.json")
+
 if(ABC_GAME_DIR)
     install(TARGETS AbcEssential
         RUNTIME DESTINATION "${ABC_GAME_DIR}/svencoop/metahook/plugins"

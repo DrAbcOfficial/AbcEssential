@@ -11,6 +11,7 @@
 #include <pm_defs.h>
 
 #include <abc/Console.h>
+#include <abc/GameData.h>
 #include <abc/CvarCmd.h>
 #include <abc/Plugin.h>
 #include <abc/Task.h>
@@ -31,12 +32,6 @@ HookedFuncs Hooks = {};
 
 static std::vector<hook_t*> EngineHookList;
 static std::vector<hook_t*> ClientHookList;
-
-#define SIG_LENGTH(sig) (sizeof(sig) - 1)
-#define FILL_SIG(sig, base, size, field) \
-	(Hooks.field) = (decltype(Hooks.field))abc::SigScan((void*)(base), (size), sig, SIG_LENGTH(sig))
-#define SIG_FUNC_NOT_FOUND(field) \
-	if (!(Hooks.field)) abc::SysError("Could not find sig: %s\nEngine buildnum %d", #field, abc::g_dwEngineBuildnum)
 
 #pragma region Engine hook bodies
 static void H_R_NewMap() {
@@ -170,15 +165,10 @@ static int H_HUD_AddEntity(int type, struct cl_entity_s* ent, const char* modeln
 
 #pragma region Fill / Install / Uninstall
 void fillEngineAddress() {
-	auto engineFactory = Sys_GetFactory((HINTERFACEMODULE)abc::g_dwEngineBase);
-	if (engineFactory && engineFactory("EngineSurface007", nullptr)) {
-#define R_NEWMAP_SIG "\x55\x8B\xEC\x51\xC7\x45\xFC\x00\x00\x00\x00\xEB\x2A\x8B\x45\xFC\x83\xC0\x01\x89\x45\xFC\x81\x7D\xFC\x00\x01\x00\x00"
-		FILL_SIG(R_NEWMAP_SIG, abc::g_dwEngineBase, abc::g_dwEngineSize, R_NewMap);
-		SIG_FUNC_NOT_FOUND(R_NewMap);
-#define CL_FINDMODELBYINDEX_SIG "\x83\xEC\x08\x56\x57\x8B\x7C\x24\x14\x8B\x34\xBD\x2A\x2A\x2A\x2A\x85\xF6\x75\x08\x5F\x33\xC0\x5E\x83\xC4\x08\xC3"
-		FILL_SIG(CL_FINDMODELBYINDEX_SIG, abc::g_dwEngineBase, abc::g_dwEngineSize, CL_GetModelByIndex);
-		SIG_FUNC_NOT_FOUND(CL_GetModelByIndex);
-	}
+	Hooks.R_NewMap = reinterpret_cast<decltype(Hooks.R_NewMap)>(abc::ResolveGameSymbol(
+		abc::g_dwEngineBase, "engine", "R_NewMap", MH_GAMESYMBOL_KIND_FUNCTION));
+	Hooks.CL_GetModelByIndex = reinterpret_cast<decltype(Hooks.CL_GetModelByIndex)>(abc::ResolveGameSymbol(
+		abc::g_dwEngineBase, "engine", "CL_GetModelByIndex", MH_GAMESYMBOL_KIND_FUNCTION));
 }
 
 void installEngineHooks() {
@@ -190,21 +180,18 @@ void installEngineHooks() {
 	// engine engfunc, detoured
 	Hooks.pfnPlaybackEvent = gEngfuncs.pfnPlaybackEvent;
 	EngineHookList.push_back(g_pMetaHookAPI->InlineHook((void*)Hooks.pfnPlaybackEvent, H_pfnPlaybackEvent, (void**)&Hooks.pfnPlaybackEvent));
-	// engine sig-scanned, detoured
+	// engine gamedata functions, detoured
 	EngineHookList.push_back(g_pMetaHookAPI->InlineHook((void*)Hooks.R_NewMap, H_R_NewMap, (void**)&Hooks.R_NewMap));
 	EngineHookList.push_back(g_pMetaHookAPI->InlineHook((void*)Hooks.CL_GetModelByIndex, H_CL_GetModelByIndex, (void**)&Hooks.CL_GetModelByIndex));
 }
 
 void fillClientAddress() {
-#define V_PUNCHAXIS_SIG "\x8B\x44\x24\x04\xF3\x0F\x10\x44\x24\x08\xF3\x0F\x11\x04\x85\x2A\x2A\x2A\x2A\xC3\xCC"
-	FILL_SIG(V_PUNCHAXIS_SIG, abc::g_dwClientBase, abc::g_dwClientSize, V_PunchAxis);
-	SIG_FUNC_NOT_FOUND(V_PunchAxis);
-#define CLIENT_SOUNDENGINE_INITIALIZE_SIG "\x81\xEC\x8C\x00\x00\x00\xA1\x2A\x2A\x2A\x2A\x33\xC4\x89\x84\x24\x88\x00\x00\x00\x53\x57\x6A\x00"
-	FILL_SIG(CLIENT_SOUNDENGINE_INITIALIZE_SIG, abc::g_dwClientBase, abc::g_dwClientSize, CClient_SoundEngine_Initialize);
-	SIG_FUNC_NOT_FOUND(CClient_SoundEngine_Initialize);
-#define CLIENT_SOUNDENGINE_PLAYFMODSOUND_SIG "\x55\x8B\xEC\x83\xE4\xF8\x81\xEC\x98\x00\x00\x00\xA1\x2A\x2A\x2A\x2A\x33"
-	FILL_SIG(CLIENT_SOUNDENGINE_PLAYFMODSOUND_SIG, abc::g_dwClientBase, abc::g_dwClientSize, CClient_SoundEngine_PlayFMODSound);
-	SIG_FUNC_NOT_FOUND(CClient_SoundEngine_PlayFMODSound);
+	Hooks.V_PunchAxis = reinterpret_cast<decltype(Hooks.V_PunchAxis)>(abc::ResolveGameSymbol(
+		abc::g_dwClientBase, "client", "V_PunchAxis", MH_GAMESYMBOL_KIND_FUNCTION));
+	Hooks.CClient_SoundEngine_Initialize = reinterpret_cast<decltype(Hooks.CClient_SoundEngine_Initialize)>(abc::ResolveGameSymbol(
+		abc::g_dwClientBase, "client", "CClient_SoundEngine_Initialize", MH_GAMESYMBOL_KIND_FUNCTION));
+	Hooks.CClient_SoundEngine_PlayFMODSound = reinterpret_cast<decltype(Hooks.CClient_SoundEngine_PlayFMODSound)>(abc::ResolveGameSymbol(
+		abc::g_dwClientBase, "client", "CClient_SoundEngine_PlayFMODSound", MH_GAMESYMBOL_KIND_FUNCTION));
 }
 
 void installClientHooks() {
