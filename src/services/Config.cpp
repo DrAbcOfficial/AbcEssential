@@ -5,7 +5,7 @@
 
 namespace abcess {
 namespace {
-constexpr char kConfigPath[] = "abcessential/config.json";
+constexpr char kConfigPath[] = "abc/abcessential/config.json";
 constexpr char kLegacyConfigPath[] = "abcenchance/config.json";
 
 struct LegacyConfig {

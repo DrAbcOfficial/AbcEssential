@@ -1,6 +1,7 @@
 #pragma once
 
-// Plugin config schema (plan 04 §3): <mod>/svencoop/abcessential/config.json.
+// Plugin config schema (plan 04 §3): <mod>/svencoop/abc/abcessential/config.json
+// (plugin resources live under the shared abc/ group dir).
 // The framework half (JSON IO through the engine filesystem) is abc::Config;
 // only the concrete field names live here. The old ABCEnchance schema
 // ("favmodels"/"concurrent_cmd"/"events_cmd" in abcenchance/config.json) is
