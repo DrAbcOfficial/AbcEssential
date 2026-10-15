@@ -44,3 +44,35 @@ if(ABC_GAME_DIR)
         COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}" --config "$<CONFIG>"
         COMMENT "Deploying AbcEssential.dll to ${ABC_GAME_DIR}/svencoop/metahook/plugins")
 endif()
+
+# --- Packaging ---------------------------------------------------------------
+# `cmake --build <build-dir> --config Release --target dist` produces
+# AbcEssential-<version>.zip, laid out to unpack into the Sven Co-op root:
+#   AbcEssential-<version>/svencoop/metahook/plugins/AbcEssential.dll
+#   AbcEssential-<version>/svencoop/metahook/gamedata/abcessential/** (generated symbols)
+#   AbcEssential-<version>/README.md
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/src/services/Version.h" ABC_ESSENTIAL_VERSION_LINE
+    REGEX "kVersion")
+string(REGEX MATCH "\"([0-9]+\\.[0-9]+\\.[0-9]+)\"" ABC_ESSENTIAL_VERSION "${ABC_ESSENTIAL_VERSION_LINE}")
+set(ABC_ESSENTIAL_VERSION "${CMAKE_MATCH_1}")
+if(NOT ABC_ESSENTIAL_VERSION)
+    message(WARNING "Could not parse the AbcEssential version from src/services/Version.h; packaging as 0.0.0")
+    set(ABC_ESSENTIAL_VERSION "0.0.0")
+endif()
+set(ABC_ESSENTIAL_STAGE_DIR "${CMAKE_BINARY_DIR}/dist/AbcEssential-${ABC_ESSENTIAL_VERSION}")
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/dist")
+add_custom_target(dist
+    COMMAND "${CMAKE_COMMAND}" -E rm -rf "${ABC_ESSENTIAL_STAGE_DIR}"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory
+        "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/metahook/plugins"
+    COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:AbcEssential>"
+        "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/metahook/plugins/"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${CMAKE_BINARY_DIR}/assets/svencoop/metahook/gamedata/abcessential"
+        "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/metahook/gamedata/abcessential"
+    COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/README.md" "${ABC_ESSENTIAL_STAGE_DIR}/"
+    COMMAND "${CMAKE_COMMAND}" -E tar cfv "AbcEssential-${ABC_ESSENTIAL_VERSION}.zip" --format=zip
+        "AbcEssential-${ABC_ESSENTIAL_VERSION}"
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/dist"
+    DEPENDS AbcEssential AbcEssentialGameData
+    COMMENT "Packaging AbcEssential-${ABC_ESSENTIAL_VERSION}.zip")
