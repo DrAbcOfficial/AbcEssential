@@ -90,3 +90,7 @@ Chained-hook contract: this plugin hooks the export table first and AbcUi hooks 
 | Path | Upstream | Pin |
 |---|---|---|
 | `thirdparty/AbcCore` | https://github.com/DrAbcOfficial/AbcCore | `9ae4a5d17dd2df110dcbe7fea7156fac89fd54ca` |
+
+## License
+
+Licensed under the [BSD 3-Clause License](LICENSE); each dependency keeps its own license.
