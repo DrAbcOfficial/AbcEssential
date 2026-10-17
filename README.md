@@ -52,7 +52,10 @@ The DLL installs to `<game>/svencoop/metahook/plugins/`; effect assets keep the 
 cmake --build --preset win32-release --target dist
 ```
 
-Produces `AbcEssential-<version>.zip` under `build/<preset>/dist/`, laid out to unpack into the Sven Co-op root (`svencoop/metahook/plugins/AbcEssential.dll`, generated gamedata, README).
+Produces `AbcEssential-<version>.zip` under `build/<preset>/dist/`
+(`svencoop/metahook/plugins/AbcEssential.dll`, generated gamedata, README). The
+archive contains `svencoop/` at its root: extract it directly into the Sven
+Co-op root, with no extra version folder to copy.
 
 ## plugins.lst order
 

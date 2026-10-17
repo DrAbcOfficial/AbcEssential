@@ -54,10 +54,11 @@ endif()
 
 # --- Packaging ---------------------------------------------------------------
 # `cmake --build <build-dir> --config Release --target dist` produces
-# AbcEssential-<version>.zip, laid out to unpack into the Sven Co-op root:
-#   AbcEssential-<version>/svencoop/metahook/plugins/AbcEssential.dll
-#   AbcEssential-<version>/svencoop/metahook/gamedata/abcessential/** (generated symbols)
-#   AbcEssential-<version>/README.md
+# AbcEssential-<version>.zip with the game root at the archive root, so it can
+# be extracted directly into the Sven Co-op directory:
+#   svencoop/metahook/plugins/AbcEssential.dll
+#   svencoop/metahook/gamedata/abcessential/** (generated symbols)
+#   README.md
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/src/services/Version.h" ABC_ESSENTIAL_VERSION_LINE
     REGEX "kVersion")
 string(REGEX MATCH "\"([0-9]+\\.[0-9]+\\.[0-9]+)\"" ABC_ESSENTIAL_VERSION "${ABC_ESSENTIAL_VERSION_LINE}")
@@ -78,8 +79,10 @@ add_custom_target(dist
         "${CMAKE_BINARY_DIR}/assets/svencoop/metahook/gamedata/abcessential"
         "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/metahook/gamedata/abcessential"
     COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/README.md" "${ABC_ESSENTIAL_STAGE_DIR}/"
-    COMMAND "${CMAKE_COMMAND}" -E tar cfv "AbcEssential-${ABC_ESSENTIAL_VERSION}.zip" --format=zip
-        "AbcEssential-${ABC_ESSENTIAL_VERSION}"
+    COMMAND "${CMAKE_COMMAND}" -E chdir "${ABC_ESSENTIAL_STAGE_DIR}"
+        "${CMAKE_COMMAND}" -E tar cfv
+        "${CMAKE_BINARY_DIR}/dist/AbcEssential-${ABC_ESSENTIAL_VERSION}.zip"
+        --format=zip -- svencoop README.md
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/dist"
     DEPENDS AbcEssential AbcEssentialGameData
     COMMENT "Packaging AbcEssential-${ABC_ESSENTIAL_VERSION}.zip")
