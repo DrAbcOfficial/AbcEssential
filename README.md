@@ -53,9 +53,10 @@ cmake --build --preset win32-release --target dist
 ```
 
 Produces `AbcEssential-<version>.zip` under `build/<preset>/dist/`
-(`svencoop/metahook/plugins/AbcEssential.dll`, generated gamedata, README). The
-archive contains `svencoop/` at its root: extract it directly into the Sven
-Co-op root, with no extra version folder to copy.
+(`svencoop/metahook/plugins/AbcEssential.dll`, generated gamedata, effect
+sprites/model under `svencoop/abcenchance/`, README). The archive contains
+`svencoop/` at its root: extract it directly into the Sven Co-op root, with no
+extra version folder to copy.
 
 ## plugins.lst order
 
