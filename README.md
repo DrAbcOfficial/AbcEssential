@@ -1,6 +1,6 @@
 # AbcEssential
 
-Non-UI utility plugin for Sven Co-op / MetaHookSv (`AbcEssential.dll`): find / models / autofunc (autojump, ducktap, concurrent command chains, event scripts) / viewmodel lag + camera / effect enhancements (blood, shells, gauss, egon). The shared [AbcCore](https://github.com/DrAbcOfficial/AbcCore) library is linked statically as a submodule.
+Non-UI utility plugin for Sven Co-op / MetaHookSv (`AbcEssential.dll`): find / models / autofunc (autojump, ducktap, concurrent command chains, event scripts) / viewmodel lag + camera / effect enhancements (blood, shells, gauss, egon). The shared [AbcCore](https://github.com/DrAbcOfficial/AbcCore) library is linked statically from the aggregate ABCEnchance checkout; AbcEssential no longer vendors AbcCore as a submodule.
 
 Zero rendering dependencies: no IMetaRenderer is loaded and Renderer.dll is not required to be present.
 
@@ -26,12 +26,14 @@ Naming follows the LLVM style; modules plug in through the registry and never re
 Windows + MSVC + CMake >= 4.2, Win32 x86 only:
 
 ```bash
-git clone --recursive https://github.com/DrAbcOfficial/AbcEssential.git
+git clone https://github.com/DrAbcOfficial/AbcEssential.git
+git clone --recursive https://github.com/DrAbcOfficial/AbcCore.git ../AbcCore
 cmake --preset win32-release
 cmake --build --preset win32-release
 ```
 
-If the nested submodules were not fetched by `--recursive`, run `git submodule update --init --recursive` inside `thirdparty/AbcCore` once.
+The default `ABC_CORE_DIR` is the sibling `../AbcCore` checkout. If AbcCore is
+elsewhere, pass `-DABC_CORE_DIR=<path>` when configuring.
 
 ## Deploy
 
@@ -85,8 +87,10 @@ Chained-hook contract: this plugin hooks the export table first and AbcUi hooks 
 | cvar | `abc_egonefx` | Egon particle ball |
 | cvar | `abc_version` | Version string (read-only) |
 
-## Submodules
+## Shared dependency
 
-| Path | Upstream | Pin |
-|---|---|---|
-| `thirdparty/AbcCore` | https://github.com/DrAbcOfficial/AbcCore | `9ae4a5d17dd2df110dcbe7fea7156fac89fd54ca` |
+AbcCore is managed by the aggregate
+[ABCEnchance](https://github.com/DrAbcOfficial/ABCEnchance) repository. Set
+`ABC_CORE_DIR` to its source tree when building AbcEssential standalone; the
+default is `../AbcCore`. The aggregate build passes its root `AbcCore/` checkout
+explicitly.
