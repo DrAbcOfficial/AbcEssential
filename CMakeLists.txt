@@ -41,9 +41,6 @@ target_compile_definitions(AbcEssential PRIVATE WIN32 _WINDOWS _USRDLL _CRT_SECU
 target_compile_options(AbcEssential PRIVATE /FIabc/ForceImport.h)
 target_link_libraries(AbcEssential PRIVATE Abc::Core)
 
-include("${ABC_CORE_DIR}/cmake/AbcGameData.cmake")
-abc_add_gamedata(AbcEssential "${CMAKE_CURRENT_SOURCE_DIR}/scripts/manifests/abcessential.json")
-
 if(ABC_GAME_DIR)
     install(TARGETS AbcEssential
         RUNTIME DESTINATION "${ABC_GAME_DIR}/svencoop/metahook/plugins"
@@ -61,7 +58,6 @@ endif()
 # AbcEssential-<version>.zip with the game root at the archive root, so it can
 # be extracted directly into the Sven Co-op directory:
 #   svencoop/metahook/plugins/AbcEssential.dll
-#   svencoop/metahook/gamedata/abc/abcessential/** (generated symbols)
 #   svencoop/abc/spr|mdl/** (effect sprites and model)
 #   README.md
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/src/services/Version.h" ABC_ESSENTIAL_VERSION_LINE
@@ -81,9 +77,6 @@ add_custom_target(dist
     COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:AbcEssential>"
         "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/metahook/plugins/"
     COMMAND "${CMAKE_COMMAND}" -E copy_directory
-        "${CMAKE_BINARY_DIR}/assets/svencoop/metahook/gamedata/abc/abcessential"
-        "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/metahook/gamedata/abc/abcessential"
-    COMMAND "${CMAKE_COMMAND}" -E copy_directory
         "${CMAKE_CURRENT_SOURCE_DIR}/assets/svencoop/abc"
         "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/abc"
     COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/README.md" "${ABC_ESSENTIAL_STAGE_DIR}/"
@@ -92,5 +85,5 @@ add_custom_target(dist
         "${CMAKE_BINARY_DIR}/dist/AbcEssential-${ABC_ESSENTIAL_VERSION}.zip"
         --format=zip -- svencoop README.md
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/dist"
-    DEPENDS AbcEssential AbcEssentialGameData
+    DEPENDS AbcEssential
     COMMENT "Packaging AbcEssential-${ABC_ESSENTIAL_VERSION}.zip")
