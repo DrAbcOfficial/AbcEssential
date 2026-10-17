@@ -46,7 +46,7 @@ if(ABC_GAME_DIR)
     install(TARGETS AbcEssential
         RUNTIME DESTINATION "${ABC_GAME_DIR}/svencoop/metahook/plugins"
         LIBRARY DESTINATION "${ABC_GAME_DIR}/svencoop/metahook/plugins")
-    install(DIRECTORY assets/svencoop/abcenchance
+    install(DIRECTORY assets/svencoop/abc
         DESTINATION "${ABC_GAME_DIR}/svencoop")
     add_custom_target(deploy
         DEPENDS AbcEssential
@@ -59,8 +59,8 @@ endif()
 # AbcEssential-<version>.zip with the game root at the archive root, so it can
 # be extracted directly into the Sven Co-op directory:
 #   svencoop/metahook/plugins/AbcEssential.dll
-#   svencoop/metahook/gamedata/abcessential/** (generated symbols)
-#   svencoop/abcenchance/spr|mdl/** (effect sprites and model)
+#   svencoop/metahook/gamedata/abc/abcessential/** (generated symbols)
+#   svencoop/abc/spr|mdl/** (effect sprites and model)
 #   README.md
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/src/services/Version.h" ABC_ESSENTIAL_VERSION_LINE
     REGEX "kVersion")
@@ -79,11 +79,11 @@ add_custom_target(dist
     COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:AbcEssential>"
         "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/metahook/plugins/"
     COMMAND "${CMAKE_COMMAND}" -E copy_directory
-        "${CMAKE_BINARY_DIR}/assets/svencoop/metahook/gamedata/abcessential"
-        "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/metahook/gamedata/abcessential"
+        "${CMAKE_BINARY_DIR}/assets/svencoop/metahook/gamedata/abc/abcessential"
+        "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/metahook/gamedata/abc/abcessential"
     COMMAND "${CMAKE_COMMAND}" -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/assets/svencoop/abcenchance"
-        "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/abcenchance"
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/svencoop/abc"
+        "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/abc"
     COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/README.md" "${ABC_ESSENTIAL_STAGE_DIR}/"
     COMMAND "${CMAKE_COMMAND}" -E chdir "${ABC_ESSENTIAL_STAGE_DIR}"
         "${CMAKE_COMMAND}" -E tar cfv

@@ -44,7 +44,7 @@ cmake --build --preset win32-release --target deploy
 # or: cmake --install build/win32-release --config Release
 ```
 
-The DLL installs to `<game>/svencoop/metahook/plugins/`; effect assets keep the legacy `abcenchance/spr|mdl/` layout (gauss_wave, gauss_loophole, egon_ball); the config file is `svencoop/abc/abcessential/config.json`, imported once from the legacy `abcenchance/config.json` on first run (the old file is kept).
+The DLL installs to `<game>/svencoop/metahook/plugins/`; effect assets live under `svencoop/abc/spr|mdl/` (gauss_wave, gauss_loophole, egon_ball); the config file is `svencoop/abc/abcessential/config.json`, imported once from the legacy `abcenchance/config.json` on first run (the old file is kept).
 
 ## Packaging
 
@@ -53,10 +53,10 @@ cmake --build --preset win32-release --target dist
 ```
 
 Produces `AbcEssential-<version>.zip` under `build/<preset>/dist/`
-(`svencoop/metahook/plugins/AbcEssential.dll`, generated gamedata, effect
-sprites/model under `svencoop/abcenchance/`, README). The archive contains
-`svencoop/` at its root: extract it directly into the Sven Co-op root, with no
-extra version folder to copy.
+(`svencoop/metahook/plugins/AbcEssential.dll`, generated gamedata under
+`svencoop/metahook/gamedata/abc/abcessential/`, effect sprites/model under
+`svencoop/abc/`, README). The archive contains `svencoop/` at its root: extract
+it directly into the Sven Co-op root, with no extra version folder to copy.
 
 ## plugins.lst order
 

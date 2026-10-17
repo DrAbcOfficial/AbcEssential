@@ -51,10 +51,10 @@ void newMap() {
 	EgonShooter = false;
 	EgonNextShoot = 0;
 	Precached.GaussBeam = extraprecache::precache("sprites/laserbeam.spr");
-	Precached.GaussWaveBeam = extraprecache::precache("abcenchance/spr/gauss_wave.spr");
-	Precached.GaussLoophole = extraprecache::precache("abcenchance/mdl/gauss_loophole.mdl");
+	Precached.GaussWaveBeam = extraprecache::precache("abc/spr/gauss_wave.spr");
+	Precached.GaussLoophole = extraprecache::precache("abc/mdl/gauss_loophole.mdl");
 	Precached.GunSmoke = extraprecache::precache("sprites/Puff1.spr");
-	Precached.EgonBeam = extraprecache::precache("abcenchance/spr/egon_ball.spr");
+	Precached.EgonBeam = extraprecache::precache("abc/spr/egon_ball.spr");
 }
 
 void frame() {
