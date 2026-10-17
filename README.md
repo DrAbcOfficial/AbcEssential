@@ -1,6 +1,6 @@
 # AbcEssential
 
-Non-UI utility plugin for Sven Co-op / MetaHookSv (`AbcEssential.dll`): find / models / autofunc (autojump, ducktap, concurrent command chains, event scripts) / viewmodel lag + camera / effect enhancements (blood, shells, gauss, egon). The shared [AbcCore](https://github.com/DrAbcOfficial/AbcCore) library is linked statically from the aggregate ABCEnchance checkout; AbcEssential no longer vendors AbcCore as a submodule.
+Non-UI utility plugin for Sven Co-op / MetaHookSv (`AbcEssential.dll`): find / models / autofunc (autojump, ducktap, concurrent command chains, event scripts) / viewmodel lag + camera / effect enhancements (blood, shells, gauss, egon). The shared [AbcCore](https://github.com/DrAbcOfficial/AbcCore) library is consumed dynamically through `AbcCore.dll`; AbcEssential no longer vendors AbcCore as a submodule.
 
 Zero rendering dependencies: no IMetaRenderer is loaded and Renderer.dll is not required to be present.
 
@@ -68,6 +68,10 @@ Renderer.dll
 AbcEssential.dll
 AbcUi.dll
 ```
+
+`AbcCore.dll` is a dependency, not a plugin: place it at
+`svencoop/metahook/dlls/AbcCore/AbcCore.dll`. The Windows loader resolves it
+when `AbcEssential.dll` loads.
 
 Chained-hook contract: this plugin hooks the export table first and AbcUi hooks afterwards (the later hook chains the earlier implementation in as its original); removing this plugin requires no changes to the others.
 
