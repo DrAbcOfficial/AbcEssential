@@ -37,6 +37,9 @@ protected:
   }
 
   void OnExitGame(int iResult) override {
+    // HUD_Shutdown normally removes the client detour first; ExitGame can
+    // bypass it, and uninstallClientHooks is idempotent.
+    hooks::uninstallClientHooks();
     hooks::uninstallEngineHooks();
     abc::GetTaskManager()->Shutdown();
   }
