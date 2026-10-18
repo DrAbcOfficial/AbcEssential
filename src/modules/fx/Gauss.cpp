@@ -133,7 +133,8 @@ static void gaussFire(float damage, bool secondary) {
 				dest[1] = src[1] + dir[1] * 8192.0f;
 				dest[2] = src[2] + dir[2] * 8192.0f;
 				// 随机发散的反射波形光束
-				for (int i = 0; i < CMathlib::RANDOM_LONG(0, 4); i++) {
+				const int Beams = CMathlib::RANDOM_LONG(0, 4);
+				for (int i = 0; i < Beams; i++) {
 					random[0] = src[0] + CMathlib::RANDOM_FLOAT(kGaussWaveLength / 2, kGaussWaveLength) *
 						(normal[0] * incidence * CMathlib::RANDOM_FLOAT(1, 3) + dir[0] * CMathlib::RANDOM_FLOAT(-3, 3));
 					random[1] = src[1] + CMathlib::RANDOM_FLOAT(kGaussWaveLength / 2, kGaussWaveLength) *
@@ -174,7 +175,8 @@ static void gaussFire(float damage, bool secondary) {
 						randomSrc[0] += dir[0] * damage;
 						randomSrc[1] += dir[1] * damage;
 						randomSrc[2] += dir[2] * damage;
-						for (int i = 0; i < CMathlib::RANDOM_LONG(8, 14); i++) {
+						const int Decorations = CMathlib::RANDOM_LONG(8, 14);
+						for (int i = 0; i < Decorations; i++) {
 							random[0] = randomSrc[0] + dir[0] * CMathlib::RANDOM_FLOAT(-512, 512);
 							random[1] = randomSrc[1] + dir[1] * CMathlib::RANDOM_FLOAT(-512, 512);
 							random[2] = randomSrc[2] + dir[2] * CMathlib::RANDOM_FLOAT(-512, 512);
