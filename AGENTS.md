@@ -4,7 +4,7 @@ Guidance for AI/automation collaborators working in this repository. Read `READM
 
 ## Hard rules
 
-- Nothing committed (code, comments, docs, commit messages, tags) may contain local machine paths, personal directories, session logs or any credentials; the game directory is always provided through the `ABC_GAME_DIR` environment variable.
+- Nothing committed (code, comments, docs, commit messages, tags) may contain local machine paths, personal directories, session logs or any credentials; the deployment destination is provided through the `ABC_GAME_DIR` environment variable (optional; unset means no deploy).
 - Do not commit test scaffolding, acceptance scripts, evidence screenshots, plans or progress logs; those are session artifacts that do not belong in the release.
 - The README is the single public document; interface, command or cvar behaviour changes must update it in the same commit.
 - Submodule pins may only point at commits that are already public upstream; confirm the commit is pushed before bumping a pin.
@@ -12,7 +12,9 @@ Guidance for AI/automation collaborators working in this repository. Read `READM
 
 ## Build
 
-Win32 x86 only:
+Win32 x86 only / C++20 / dynamic CRT (/MD). The pinned `thirdparty/AbcCore`
+target is explicitly pinned to the same `/MD` runtime. `ABC_GAME_DIR` is
+optional: unset means the plugin is built but not deployed.
 
 ```bash
 cmake --preset win32-debug
@@ -21,13 +23,16 @@ cmake --build --preset win32-debug    # Release: win32-release
 
 ## Conventions
 
+- Formatting follows LLVM (2 spaces, 80 columns, attached braces). Identifier
+  casing follows the repository conventions: ABCEnchance-derived functions keep
+  their UpperCamelCase spelling, new lower-level helpers use lowerCamelCase and
+  constants use the `k` prefix.
 - C-style casts remain in ABCEnchance-derived code; new code uses named casts.
-
-- Legacy naming: ABCEnchance-derived UpperCamelCase functions and `m_` members
-  are kept for source parity. New code uses lowerCamel functions/variables and
-  k-prefixed constants.
-
-- Naming follows the LLVM style; feature modules implement `IFeatureModule` and self-register, and must not rewrite the chain fields of `hooks::Hooks` directly.
-- When touching the export-table chain or sig-scan, preserve the ownership order "this plugin hooks first, AbcUi hooks second" as documented in `src/hooks.h`.
+- Feature modules implement `IFeatureModule` and self-register; they must not
+  rewrite the chain-owned fields of `hooks::Hooks` (type `hooks::HookedFuncs`)
+  directly.
+- When touching the export-table chain or gamedata symbol resolution, preserve
+  the ownership order "this plugin hooks first, AbcUi hooks second" as
+  documented in `src/hooks.h`.
 - Commit messages use `type(scope): summary` (feat / fix / refactor / docs / build / chore) with motivation and verification in the body.
 - Before handing off: no local paths or credentials; README matches actual behaviour; Debug and Release both build.
