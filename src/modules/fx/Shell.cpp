@@ -18,7 +18,7 @@ using abc::CMathlib;
 
 TEMPENTITY* tempModel(float* pos, float* dir, float* angles, float life, int modelIndex, int soundtype, TempModelFn original) {
 	TEMPENTITY* shell = original(pos, dir, angles, life, modelIndex, soundtype);
-	if (shell && ShellEfxCvar->value > 0 && soundtype > 0) {
+	if (shell && ShellEfxCvar && ShellEfxCvar->value > 0 && soundtype > 0) {
 		shell->flags |= FTENT_COLLIDEALL | FTENT_SLOWGRAVITY | FTENT_CLIENTCUSTOM;
 		shell->entity.curstate.rendermode = kRenderTransTexture;
 		shell->entity.curstate.renderamt = 255;

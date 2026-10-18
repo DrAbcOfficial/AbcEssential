@@ -20,7 +20,7 @@ namespace fx {
 using abc::CMathlib;
 
 void bloodSprite(float* org, int colorindex, int modelIndex, int modelIndex2, float size) {
-	if (BloodEfxCvar->value <= 0 || !std::isfinite(size) || size <= 0)
+	if (!BloodEfxCvar || BloodEfxCvar->value <= 0 || !std::isfinite(size) || size <= 0)
 		return;
 	size = (std::min)(size, 64.0f);
 	model_t* spriteModel = gEngfuncs.hudGetModelByIndex(modelIndex);
