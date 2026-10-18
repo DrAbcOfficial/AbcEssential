@@ -176,7 +176,12 @@ void init() {
 			usage();
 			return;
 		}
-		switch (std::atoi(gEngfuncs.Cmd_Argv(1))) {
+		const auto operation = parseOperation(gEngfuncs.Cmd_Argv(1));
+		if (!operation) {
+			usage();
+			return;
+		}
+		switch (*operation) {
 		case 0:
 			EventCmds.erase(evt);
 			break;
@@ -188,7 +193,9 @@ void init() {
 			EventCmds[evt] = gEngfuncs.Cmd_Argv(3);
 			break;
 		}
-		default:usage();break;
+		default:
+			usage();
+			break;
 		}
 	});
 	// replay persisted event bindings
