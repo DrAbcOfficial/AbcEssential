@@ -7,6 +7,12 @@ include("${CMAKE_CURRENT_LIST_DIR}/cmake/AbcCommon.cmake")
 set(ABC_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/AbcCore")
 add_subdirectory("${ABC_CORE_DIR}" AbcCore-build)
 
+# The pinned thirdparty/AbcCore pin still defaults to the static CRT (/MT).
+# AbcEssential builds with the dynamic CRT (/MD), and a static core linked
+# into the plugin must use the same runtime, so pin the core target here.
+set_target_properties(abc_core PROPERTIES
+    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+
 set(METAHOOK_INCLUDE_DIR "${ABC_CORE_DIR}/thirdparty/MetaHook/include")
 
 add_library(AbcEssential MODULE

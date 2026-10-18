@@ -5,9 +5,10 @@ if(NOT WIN32 OR NOT MSVC OR NOT CMAKE_SIZEOF_VOID_P STREQUAL "4")
     message(FATAL_ERROR "ABC projects require Windows MSVC x86. Configure with: cmake -A Win32 ...")
 endif()
 
-# Static CRT (/MT, /MTd) - must be set before any target is created so it
-# propagates into add_subdirectory'ed third-party projects as well.
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+# Dynamic CRT (/MD, /MDd) - AbcCore and every plugin DLL exchange STL
+# objects, so they must share one runtime heap. Must be set before any target
+# is created so it propagates into add_subdirectory'ed third-party projects.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
