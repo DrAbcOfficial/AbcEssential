@@ -56,8 +56,7 @@ void newMap() {
   EgonShooter = false;
   EgonNextShoot = 0;
   Precached.GaussBeam = extraprecache::precache("sprites/laserbeam.spr");
-  Precached.GaussWaveBeam =
-      extraprecache::precache("abc/spr/gauss_wave.spr");
+  Precached.GaussWaveBeam = extraprecache::precache("abc/spr/gauss_wave.spr");
   Precached.GaussLoophole =
       extraprecache::precache("abc/mdl/gauss_loophole.mdl");
   Precached.GunSmoke = extraprecache::precache("sprites/Puff1.spr");
