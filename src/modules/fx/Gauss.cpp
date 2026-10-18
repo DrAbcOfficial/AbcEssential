@@ -86,7 +86,7 @@ static void gaussFire(float damage, bool secondary) {
   math::VectorCopy(local->curstate.origin, src);
   gEngfuncs.pEventAPI->EV_LocalPlayerViewheight(viewOfs);
   math::VectorAdd(src, viewOfs, src);
-  math::VectorMultipiler(forward, 8192);
+  math::VectorMultiply(forward, 8192);
   math::VectorAdd(src, forward, dest);
 
   while (damage > 10 && maxHits > 0) {

@@ -34,7 +34,7 @@ void init() {
 void calcRefdef(ref_params_t *pparams) {
   vec3_t right;
   math::AngleVectors(pparams->cl_viewangles, nullptr, right, nullptr);
-  math::VectorMultipiler(right, CamIdealRightCvar->value);
+  math::VectorMultiply(right, CamIdealRightCvar->value);
   pparams->vieworg[0] += right[0];
   pparams->vieworg[1] += right[1];
   pparams->vieworg[2] += CamIdealHeightCvar->value + right[2];

@@ -1,6 +1,6 @@
 // Viewmodel lag / slide + first-person view offset.
 // Ported from ABCEnchance src/core/module/viewmodellag.* (GBK -> UTF-8); the
-// SourceSDK Vector-class expressions are rewritten over abc::CMathlib array
+// SourceSDK Vector-class expressions are rewritten over abc::math array
 // math - AbcEssential carries no vector class by design.
 // Lag logic copied and edited from
 // https://github.com/SNMetamorph/PrimeXT/blob/master/client/r_view.cpp
@@ -86,7 +86,7 @@ void calcViewModelLag(ref_params_t *pparams, vec3_t origin, vec3_t angles,
   }
 
   math::AngleVectors(originalAngles, forward, right, up);
-  float pitch = originalAngles[math::Q_PITCH];
+  float pitch = originalAngles[math::kPitch];
   if (pitch > 180.0f)
     pitch -= 360.0f;
   else if (pitch < -180.0f)
