@@ -1,6 +1,6 @@
 # AbcEssential
 
-Non-UI utility plugin for Sven Co-op / MetaHookSv (`AbcEssential.dll`): find / models / autofunc (autojump, ducktap, concurrent command chains, event scripts) / viewmodel lag + camera / effect enhancements (blood, shells, gauss, egon). The shared [AbcCore](https://github.com/DrAbcOfficial/AbcCore) library is linked statically as a submodule.
+Non-UI utility plugin for Sven Co-op / MetaHookSv (`AbcEssential.dll`): find / models / autofunc (autojump, ducktap, concurrent command chains, event scripts) / viewmodel lag + camera / effect enhancements (blood, shells, gauss, egon). The shared [AbcCore](https://github.com/DrAbcOfficial/AbcCore) library is consumed as `AbcCore.dll` from the aggregate/`ABC_CORE_DIR` checkout; no AbcCore copy lives under `thirdparty/`.
 
 Zero rendering dependencies: no IMetaRenderer is loaded and Renderer.dll is not required to be present.
 
@@ -9,6 +9,7 @@ Zero rendering dependencies: no IMetaRenderer is loaded and Renderer.dll is not 
 ```text
 src/
 ├── plugins.cpp            # entry point (CAbcPluginBase + EXPOSE_SINGLE_INTERFACE)
+├── CoreGlobals.cpp        # per-plugin metahook globals copied into AbcCore.dll
 ├── hooks.h/.cpp           # gamedata symbol resolution, inline-hook install/remove, chained export thunks (single owner of the chain)
 ├── services/              # plugin-level services
 │   ├── Config.h/.cpp      #   config schema + one-shot legacy import
@@ -27,11 +28,15 @@ Windows + MSVC + CMake >= 4.2, Win32 x86 only, C++20, dynamic CRT (/MD):
 
 ```bash
 git clone --recursive https://github.com/DrAbcOfficial/AbcEssential.git
+git clone --recursive https://github.com/DrAbcOfficial/AbcCore.git ../AbcCore
 cmake --preset win32-release
 cmake --build --preset win32-release
 ```
 
-If the nested submodules were not fetched by `--recursive`, run `git submodule update --init --recursive` inside `thirdparty/AbcCore` once.
+The default `ABC_CORE_DIR` is the sibling `../AbcCore` checkout; pass
+`-DABC_CORE_DIR=<path>` when AbcCore lives elsewhere. The build produces
+`AbcEssential.dll` against `AbcCore.lib`; deploy `AbcCore.dll` alongside the
+plugins (the aggregate package puts it under `metahook/dlls/AbcCore/`).
 
 ## Deploy
 
@@ -54,6 +59,7 @@ Produces `AbcEssential-<version>.zip` under `build/<preset>/dist/`. The archive
 root is `AbcEssential-<version>/`, containing `svencoop/` (plugin DLL and
 generated gamedata) and `README.md`; copy the versioned `svencoop/` directory
 into the Sven Co-op root (or extract while stripping the version folder).
+`AbcCore.dll` is provided by the aggregate package, not this zip.
 
 ## plugins.lst order
 
@@ -66,7 +72,7 @@ AbcEssential.dll
 AbcUi.dll
 ```
 
-Chained-hook contract: this plugin hooks the export table first and AbcUi hooks afterwards (the later hook chains the earlier implementation in as its original); removing this plugin requires no changes to the others.
+Chained-hook contract: this plugin hooks the export table first and AbcUi hooks afterwards (the later hook chains the earlier implementation in as its original); removing this plugin requires no changes to the others. `AbcCore.dll` is a shared dependency, not a plugin in this list; place it under `svencoop/metahook/dlls/AbcCore/`.
 
 ## Commands / cvars
 
@@ -87,12 +93,6 @@ Chained-hook contract: this plugin hooks the export table first and AbcUi hooks 
 | cvar | `abc_gaussefx` | Gauss primary-fire rework (penetration / reflection / decals) |
 | cvar | `abc_egonefx` | Egon particle ball |
 | cvar | `abc_version` | Version string (read-only) |
-
-## Submodules
-
-| Path | Upstream | Pin |
-|---|---|---|
-| `thirdparty/AbcCore` | https://github.com/DrAbcOfficial/AbcCore | `9ae4a5d17dd2df110dcbe7fea7156fac89fd54ca` |
 
 ## License
 

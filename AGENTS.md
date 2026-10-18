@@ -12,9 +12,10 @@ Guidance for AI/automation collaborators working in this repository. Read `READM
 
 ## Build
 
-Win32 x86 only / C++20 / dynamic CRT (/MD). The pinned `thirdparty/AbcCore`
-target is explicitly pinned to the same `/MD` runtime. `ABC_GAME_DIR` is
-optional: unset means the plugin is built but not deployed.
+Win32 x86 only / C++20 / dynamic CRT (/MD). AbcCore is consumed as
+`AbcCore.dll` from `ABC_CORE_DIR` (sibling `../AbcCore` by default); there is no
+`thirdparty/AbcCore` checkout. `ABC_GAME_DIR` is optional: unset means the
+plugin is built but not deployed.
 
 ```bash
 cmake --preset win32-debug
@@ -28,6 +29,9 @@ cmake --build --preset win32-debug    # Release: win32-release
   their UpperCamelCase spelling, new lower-level helpers use lowerCamelCase and
   constants use the `k` prefix.
 - C-style casts remain in ABCEnchance-derived code; new code uses named casts.
+- The plugin defines the five metahook globals in `src/CoreGlobals.cpp`;
+  `CAbcPluginBase` copies them into `AbcCore.dll`. Do not add a second copy in
+  another translation unit.
 - Feature modules implement `IFeatureModule` and self-register; they must not
   rewrite the chain-owned fields of `hooks::Hooks` (type `hooks::HookedFuncs`)
   directly.

@@ -4,19 +4,22 @@ project(AbcEssential LANGUAGES CXX)
 
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/AbcCommon.cmake")
 
-set(ABC_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/AbcCore")
+# AbcCore is owned by the aggregate ABCEnchance repository and consumed as a
+# shared library through ABC_CORE_DIR. Standalone builds use a sibling
+# checkout by default.
+set(ABC_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../AbcCore" CACHE PATH
+    "Path to the shared AbcCore source tree")
+if(NOT EXISTS "${ABC_CORE_DIR}/CMakeLists.txt")
+    message(FATAL_ERROR
+        "AbcCore not found at '${ABC_CORE_DIR}'. Clone DrAbcOfficial/AbcCore as a sibling of AbcEssential or pass -DABC_CORE_DIR=<path>.")
+endif()
 add_subdirectory("${ABC_CORE_DIR}" AbcCore-build)
-
-# The pinned thirdparty/AbcCore pin still defaults to the static CRT (/MT).
-# AbcEssential builds with the dynamic CRT (/MD), and a static core linked
-# into the plugin must use the same runtime, so pin the core target here.
-set_target_properties(abc_core PROPERTIES
-    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
 set(METAHOOK_INCLUDE_DIR "${ABC_CORE_DIR}/thirdparty/MetaHook/include")
 
 add_library(AbcEssential MODULE
     src/plugins.cpp
+    src/CoreGlobals.cpp
     src/hooks.cpp
     src/services/Config.cpp
     src/services/ExtraPrecache.cpp
@@ -36,7 +39,7 @@ add_library(AbcEssential MODULE
     "${METAHOOK_INCLUDE_DIR}/HLSDK/common/interface.cpp"
 )
 target_compile_definitions(AbcEssential PRIVATE WIN32 _WINDOWS _USRDLL _CRT_SECURE_NO_WARNINGS)
-target_compile_options(AbcEssential PRIVATE /W4)
+target_compile_options(AbcEssential PRIVATE /W4 /FIabc/ForceImport.h)
 target_link_libraries(AbcEssential PRIVATE Abc::Core)
 
 include("${ABC_CORE_DIR}/cmake/AbcGameData.cmake")
