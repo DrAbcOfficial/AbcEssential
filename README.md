@@ -27,14 +27,14 @@ Formatting follows LLVM; modules plug in through the registry and never rewrite 
 Windows + MSVC + CMake >= 4.2, Win32 x86 only, C++20, dynamic CRT (/MD):
 
 ```bash
-git clone --recursive https://github.com/DrAbcOfficial/AbcEssential.git
+git clone https://github.com/DrAbcOfficial/AbcEssential.git
 git clone --recursive https://github.com/DrAbcOfficial/AbcCore.git ../AbcCore
 cmake --preset win32-release
 cmake --build --preset win32-release
 ```
 
-The default `ABC_CORE_DIR` is the sibling `../AbcCore` checkout; pass
-`-DABC_CORE_DIR=<path>` when AbcCore lives elsewhere. The build produces
+The default `ABC_CORE_DIR` is the sibling `../AbcCore` checkout. If AbcCore is
+elsewhere, pass `-DABC_CORE_DIR=<path>` when configuring. The build produces
 `AbcEssential.dll` against `AbcCore.lib`; deploy `AbcCore.dll` alongside the
 plugins (the aggregate package puts it under `metahook/dlls/AbcCore/`).
 
@@ -47,7 +47,7 @@ cmake --build --preset win32-release --target deploy
 # or: cmake --install build/win32-release --config Release
 ```
 
-The DLL installs to `<game>/svencoop/metahook/plugins/`. AbcEssential does not ship effect assets: the FX code precaches the legacy `abcenchance/spr|mdl/` paths (gauss_wave, gauss_loophole, egon_ball) from the game's existing content. The config file is `svencoop/abc/abcessential/config.json`, imported once from the legacy `abcenchance/config.json` on first run (the old file is kept).
+The DLL installs to `<game>/svencoop/metahook/plugins/`; effect assets live under `svencoop/abc/spr|mdl/` (gauss_wave, gauss_loophole, egon_ball); the config file is `svencoop/abc/abcessential/config.json`, imported once from the legacy `abcenchance/config.json` on first run (the old file is kept).
 
 ## Packaging
 
