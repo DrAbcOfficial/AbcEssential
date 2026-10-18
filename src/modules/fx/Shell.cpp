@@ -10,6 +10,8 @@
 
 #include <r_efx.h>
 
+#include <algorithm>
+
 #include <abc/Math.h>
 
 namespace fx {
@@ -22,9 +24,14 @@ TEMPENTITY* tempModel(float* pos, float* dir, float* angles, float life, int mod
 		shell->flags |= FTENT_COLLIDEALL | FTENT_SLOWGRAVITY | FTENT_CLIENTCUSTOM;
 		shell->entity.curstate.rendermode = kRenderTransTexture;
 		shell->entity.curstate.renderamt = 255;
-		shell->fadeSpeed = gEngfuncs.GetClientTime() + life;
+		shell->die = gEngfuncs.GetClientTime() + life;
+		shell->fadeSpeed = life; // duration, not a deadline; die owns the deadline
 		shell->callback = [](struct tempent_s* ent, float frametime, float currenttime) {
-			ent->entity.curstate.renderamt = (int)((ent->fadeSpeed - currenttime) * 255.0f);
+			(void)frametime;
+			const float Remaining = ent->fadeSpeed > 0.0f
+				? (ent->die - currenttime) / ent->fadeSpeed : 0.0f;
+			ent->entity.curstate.renderamt =
+				static_cast<int>(std::clamp(Remaining, 0.0f, 1.0f) * 255.0f);
 		};
 		vec3_t smokeDir = { dir[0], dir[1], CMathlib::RANDOM_FLOAT(70, 155) };
 		// smoke goes through the original entry point: no re-enhancement loop
