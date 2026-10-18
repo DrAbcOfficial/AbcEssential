@@ -36,6 +36,7 @@ add_library(AbcEssential MODULE
     "${METAHOOK_INCLUDE_DIR}/HLSDK/common/interface.cpp"
 )
 target_compile_definitions(AbcEssential PRIVATE WIN32 _WINDOWS _USRDLL _CRT_SECURE_NO_WARNINGS)
+target_compile_options(AbcEssential PRIVATE /W4)
 target_link_libraries(AbcEssential PRIVATE Abc::Core)
 
 include("${ABC_CORE_DIR}/cmake/AbcGameData.cmake")
