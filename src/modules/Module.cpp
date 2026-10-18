@@ -50,8 +50,10 @@ void ModuleRegistry::newMapAll() {
 }
 
 void ModuleRegistry::shutdownAll() {
-  for (size_t i = 0; i < Count; i++)
-    Modules[i]->onShutdown();
+  // Reverse registration order: modules that initialized later may depend on
+  // earlier ones, so tear them down first.
+  for (size_t i = Count; i > 0; --i)
+    Modules[i - 1]->onShutdown();
 }
 
 } // namespace abcess
