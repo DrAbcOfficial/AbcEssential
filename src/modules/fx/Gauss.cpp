@@ -16,6 +16,7 @@
 #include <pmtrace.h>
 #include <r_efx.h>
 
+#include <abc/EngineRandom.h>
 #include <abc/Math.h>
 
 #include "../../hooks.h"

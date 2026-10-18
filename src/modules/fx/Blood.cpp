@@ -13,6 +13,7 @@
 #include <com_model.h>
 #include <r_efx.h>
 
+#include <abc/EngineRandom.h>
 #include <abc/Math.h>
 
 namespace fx {

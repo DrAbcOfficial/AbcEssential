@@ -12,6 +12,7 @@
 
 #include <algorithm>
 
+#include <abc/EngineRandom.h>
 #include <abc/Math.h>
 
 namespace fx {
