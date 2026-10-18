@@ -21,6 +21,10 @@ cmake --build --preset win32-debug    # Release: win32-release
 
 ## Conventions
 
+- Legacy naming: ABCEnchance-derived UpperCamelCase functions and `m_` members
+  are kept for source parity. New code uses lowerCamel functions/variables and
+  k-prefixed constants.
+
 - Naming follows the LLVM style; feature modules implement `IFeatureModule` and self-register, and must not rewrite the chain fields of `hooks::Hooks` directly.
 - When touching the export-table chain or sig-scan, preserve the ownership order "this plugin hooks first, AbcUi hooks second" as documented in `src/hooks.h`.
 - Commit messages use `type(scope): summary` (feat / fix / refactor / docs / build / chore) with motivation and verification in the body.
