@@ -21,6 +21,8 @@ cmake --build --preset win32-debug    # Release: win32-release
 
 ## Conventions
 
+- C-style casts remain in ABCEnchance-derived code; new code uses named casts.
+
 - Legacy naming: ABCEnchance-derived UpperCamelCase functions and `m_` members
   are kept for source parity. New code uses lowerCamel functions/variables and
   k-prefixed constants.
