@@ -26,7 +26,7 @@ namespace viewmodellag {
 
 namespace {
 
-using abc::CMathlib;
+namespace math = abc::math;
 
 cvar_t *ModelLagCvar;
 cvar_t *ModelLagAutoStopCvar;
@@ -50,23 +50,23 @@ void calcViewModelLag(ref_params_t *pparams, vec3_t origin, vec3_t angles,
     return;
   static vec3_t LastFacing = {0, 0, 0};
   vec3_t OriginalOrigin, OriginalAngles;
-  CMathlib::VectorCopy(origin, OriginalOrigin);
-  CMathlib::VectorCopy(angles, OriginalAngles);
+  math::VectorCopy(origin, OriginalOrigin);
+  math::VectorCopy(angles, OriginalAngles);
 
   // Calculate our drift
   vec3_t forward, right, up;
-  CMathlib::AngleVectors(angles, forward, right, up);
+  math::AngleVectors(angles, forward, right, up);
 
   if (pparams->frametime != 0.0f) { // not paused
     vec3_t difference;
-    CMathlib::VectorSubtract(forward, LastFacing, difference);
+    math::VectorSubtract(forward, LastFacing, difference);
 
     float speed = 5.0f;
     // If we start to lag too far behind, increase the "catch up" speed.
     // Solves the problem with fast cl_yawspeed, m_yaw or joysticks rotating
     // quickly; the old code would slam lastfacing with origin causing the
     // viewmodel to pop to a new position.
-    float diff = CMathlib::FVectorLength(difference);
+    float diff = math::FVectorLength(difference);
     if ((diff > ModelLagValueCvar->value) &&
         (ModelLagValueCvar->value > 0.0f)) {
       float scale = diff / ModelLagValueCvar->value;
@@ -75,32 +75,32 @@ void calcViewModelLag(ref_params_t *pparams, vec3_t origin, vec3_t angles,
 
     // FIXME:  Needs to be predictable?
     // LastFacing += difference * (speed * frametime)
-    CMathlib::VectorMA(LastFacing, speed * pparams->frametime, difference,
-                       LastFacing);
+    math::VectorMA(LastFacing, speed * pparams->frametime, difference,
+                   LastFacing);
     // Make sure it doesn't grow out of control
-    CMathlib::VectorNormalize(LastFacing);
+    math::VectorNormalize(LastFacing);
     // origin += difference * -speed
     vec3_t scaled;
-    CMathlib::VectorScale(difference, -1.0f * speed, scaled);
-    CMathlib::VectorAdd(origin, scaled, origin);
+    math::VectorScale(difference, -1.0f * speed, scaled);
+    math::VectorAdd(origin, scaled, origin);
   }
 
-  CMathlib::AngleVectors(originalAngles, forward, right, up);
-  float pitch = originalAngles[CMathlib::Q_PITCH];
+  math::AngleVectors(originalAngles, forward, right, up);
+  float pitch = originalAngles[math::Q_PITCH];
   if (pitch > 180.0f)
     pitch -= 360.0f;
   else if (pitch < -180.0f)
     pitch += 360.0f;
 
   if (ModelLagValueCvar->value <= 0.0f) {
-    CMathlib::VectorCopy(OriginalOrigin, origin);
-    CMathlib::VectorCopy(OriginalAngles, angles);
+    math::VectorCopy(OriginalOrigin, origin);
+    math::VectorCopy(OriginalAngles, angles);
   } else {
     // FIXME: These are the old settings that caused too many exposed polys on
     // some models
-    CMathlib::VectorMA(origin, -pitch * 0.035f, forward, origin);
-    CMathlib::VectorMA(origin, -pitch * 0.03f, right, origin);
-    CMathlib::VectorMA(origin, -pitch * 0.02f, up, origin);
+    math::VectorMA(origin, -pitch * 0.035f, forward, origin);
+    math::VectorMA(origin, -pitch * 0.03f, right, origin);
+    math::VectorMA(origin, -pitch * 0.02f, up, origin);
   }
 }
 
@@ -110,7 +110,7 @@ void calcModelSlide(ref_params_t *pparams) {
   cl_entity_t *local = gEngfuncs.GetLocalPlayer();
   pmtrace_t tr;
   vec3_t vecEnd;
-  CMathlib::VectorCopy(local->curstate.origin, vecEnd);
+  math::VectorCopy(local->curstate.origin, vecEnd);
   vecEnd[2] += -4;
   gEngfuncs.pEventAPI->EV_SetTraceHull(0);
   gEngfuncs.pEventAPI->EV_PlayerTrace(local->curstate.origin, vecEnd,
@@ -123,12 +123,11 @@ void calcModelSlide(ref_params_t *pparams) {
   float slideRatio = 1 - ((viewHeight - 12) / 16);
   cl_entity_t *view = gEngfuncs.GetViewModel();
   vec3_t right;
-  CMathlib::AngleVectors(view->angles, nullptr, right, nullptr);
-  CMathlib::VectorNormalize(right);
-  CMathlib::VectorScale(right, -ModelSlideLengthCvar->value * slideRatio,
-                        right);
+  math::AngleVectors(view->angles, nullptr, right, nullptr);
+  math::VectorNormalize(right);
+  math::VectorScale(right, -ModelSlideLengthCvar->value * slideRatio, right);
   view->curstate.angles[2] = -ModelSlideAngleCvar->value * slideRatio;
-  CMathlib::VectorAdd(view->origin, right, view->origin);
+  math::VectorAdd(view->origin, right, view->origin);
   view->origin[2] -= ModelSlideHeightCvar->value * slideRatio;
 }
 
@@ -174,11 +173,11 @@ void calcRefdef(ref_params_t *pparams) {
     view->origin[2] += 0.5;
 
   vec3_t viewOrigin, viewAngles;
-  CMathlib::VectorCopy(view->origin, viewOrigin);
-  CMathlib::VectorCopy(view->angles, viewAngles);
+  math::VectorCopy(view->origin, viewOrigin);
+  math::VectorCopy(view->angles, viewAngles);
   calcViewModelLag(pparams, viewOrigin, viewAngles, pparams->cl_viewangles);
-  CMathlib::VectorCopy(viewOrigin, view->origin);
-  CMathlib::VectorCopy(viewAngles, view->angles);
+  math::VectorCopy(viewOrigin, view->origin);
+  math::VectorCopy(viewAngles, view->angles);
   calcModelSlide(pparams);
 }
 

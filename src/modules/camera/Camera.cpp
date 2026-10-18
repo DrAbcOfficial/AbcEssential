@@ -17,7 +17,7 @@ namespace camera {
 
 namespace {
 
-using abc::CMathlib;
+namespace math = abc::math;
 
 cvar_t *CamIdealHeightCvar;
 cvar_t *CamIdealRightCvar;
@@ -33,8 +33,8 @@ void init() {
 
 void calcRefdef(ref_params_t *pparams) {
   vec3_t right;
-  CMathlib::AngleVectors(pparams->cl_viewangles, nullptr, right, nullptr);
-  CMathlib::VectorMultipiler(right, CamIdealRightCvar->value);
+  math::AngleVectors(pparams->cl_viewangles, nullptr, right, nullptr);
+  math::VectorMultipiler(right, CamIdealRightCvar->value);
   pparams->vieworg[0] += right[0];
   pparams->vieworg[1] += right[1];
   pparams->vieworg[2] += CamIdealHeightCvar->value + right[2];

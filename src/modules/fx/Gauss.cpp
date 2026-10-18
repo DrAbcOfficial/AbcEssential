@@ -24,7 +24,7 @@ namespace fx {
 
 namespace {
 
-using abc::CMathlib;
+namespace math = abc::math;
 
 // beam tuning (old GAUSS_* macros)
 constexpr float kGaussWaveLength = 48.0f;
@@ -41,7 +41,7 @@ void createGaussLoophole(pmtrace_t *trace) {
       gEngfuncs.pEfxAPI->CL_TempEntAllocHigh(trace->endpos, Model);
   if (!temp)
     return;
-  CMathlib::VectorAngles(trace->plane.normal, temp->entity.angles);
+  math::VectorAngles(trace->plane.normal, temp->entity.angles);
   temp->entity.angles[0] += 90;
   temp->entity.angles[2] += 180;
   temp->die = gEngfuncs.GetClientTime() + 1.0f;
@@ -78,15 +78,15 @@ static void gaussFire(float damage, bool secondary) {
 
   gEngfuncs.GetViewAngles(viewAngles);
 
-  CMathlib::AngleVectors(viewAngles, forward, nullptr, nullptr);
-  CMathlib::VectorCopy(forward, dir);
-  CMathlib::VectorNormalize(dir);
+  math::AngleVectors(viewAngles, forward, nullptr, nullptr);
+  math::VectorCopy(forward, dir);
+  math::VectorNormalize(dir);
 
-  CMathlib::VectorCopy(local->curstate.origin, src);
+  math::VectorCopy(local->curstate.origin, src);
   gEngfuncs.pEventAPI->EV_LocalPlayerViewheight(viewOfs);
-  CMathlib::VectorAdd(src, viewOfs, src);
-  CMathlib::VectorMultipiler(forward, 8192);
-  CMathlib::VectorAdd(src, forward, dest);
+  math::VectorAdd(src, viewOfs, src);
+  math::VectorMultipiler(forward, 8192);
+  math::VectorAdd(src, forward, dest);
 
   while (damage > 10 && maxHits > 0) {
     // 第一发射线跟踪
@@ -125,8 +125,8 @@ static void gaussFire(float damage, bool secondary) {
       // 穿透后续实体
       entIgnore = -1;
       // 平面法线与射线夹角决定反射还是穿透
-      CMathlib::VectorCopy(trace.plane.normal, normal);
-      float incidence = -CMathlib::DotProduct(normal, dir);
+      math::VectorCopy(trace.plane.normal, normal);
+      float incidence = -math::DotProduct(normal, dir);
       // 角度小于60度
       if (incidence < 0.5) {
         // reflect: 反射方向取镜面矢量,能量随入射角衰减
@@ -134,29 +134,29 @@ static void gaussFire(float damage, bool secondary) {
         reflect[1] = 2.0f * normal[1] * incidence + dir[1];
         reflect[2] = 2.0f * normal[2] * incidence + dir[2];
         // 取得新的反射方向作为后续射线路径
-        CMathlib::VectorCopy(reflect, dir);
-        CMathlib::VectorCopy(trace.endpos, src);
+        math::VectorCopy(reflect, dir);
+        math::VectorCopy(trace.endpos, src);
         dest[0] = src[0] + dir[0] * 8192.0f;
         dest[1] = src[1] + dir[1] * 8192.0f;
         dest[2] = src[2] + dir[2] * 8192.0f;
         // 随机发散的反射波形光束
-        const int Beams = CMathlib::RANDOM_LONG(0, 4);
+        const int Beams = math::RANDOM_LONG(0, 4);
         for (int i = 0; i < Beams; i++) {
           random[0] =
               src[0] +
-              CMathlib::RANDOM_FLOAT(kGaussWaveLength / 2, kGaussWaveLength) *
-                  (normal[0] * incidence * CMathlib::RANDOM_FLOAT(1, 3) +
-                   dir[0] * CMathlib::RANDOM_FLOAT(-3, 3));
+              math::RANDOM_FLOAT(kGaussWaveLength / 2, kGaussWaveLength) *
+                  (normal[0] * incidence * math::RANDOM_FLOAT(1, 3) +
+                   dir[0] * math::RANDOM_FLOAT(-3, 3));
           random[1] =
               src[1] +
-              CMathlib::RANDOM_FLOAT(kGaussWaveLength / 2, kGaussWaveLength) *
-                  (normal[1] * incidence * CMathlib::RANDOM_FLOAT(1, 3) +
-                   dir[1] * CMathlib::RANDOM_FLOAT(-3, 3));
+              math::RANDOM_FLOAT(kGaussWaveLength / 2, kGaussWaveLength) *
+                  (normal[1] * incidence * math::RANDOM_FLOAT(1, 3) +
+                   dir[1] * math::RANDOM_FLOAT(-3, 3));
           random[2] =
               src[2] +
-              CMathlib::RANDOM_FLOAT(kGaussWaveLength / 2, kGaussWaveLength) *
-                  (normal[2] * incidence * CMathlib::RANDOM_FLOAT(1, 3) +
-                   dir[2] * CMathlib::RANDOM_FLOAT(-3, 3));
+              math::RANDOM_FLOAT(kGaussWaveLength / 2, kGaussWaveLength) *
+                  (normal[2] * incidence * math::RANDOM_FLOAT(1, 3) +
+                   dir[2] * math::RANDOM_FLOAT(-3, 3));
           gEngfuncs.pEfxAPI->R_BeamPoints(
               src, random, Precached.GaussWaveBeam, 0.2f,
               secondary ? kGaussLaserPrimaryWidth : kGaussLaserSecondaryWidth,
@@ -188,21 +188,18 @@ static void gaussFire(float damage, bool secondary) {
                                                 PM_STUDIO_BOX, entIgnore,
                                                 &beamTrace);
             // 光束长度即厚度
-            CMathlib::VectorSubtract(beamTrace.endpos, trace.endpos, segment);
-            float thickness = (float)CMathlib::VectorLength(segment);
+            math::VectorSubtract(beamTrace.endpos, trace.endpos, segment);
+            float thickness = (float)math::VectorLength(segment);
             // 厚度比伤害小才继续消耗
-            CMathlib::VectorCopy(beamTrace.endpos, randomSrc);
+            math::VectorCopy(beamTrace.endpos, randomSrc);
             randomSrc[0] += dir[0] * damage;
             randomSrc[1] += dir[1] * damage;
             randomSrc[2] += dir[2] * damage;
-            const int Decorations = CMathlib::RANDOM_LONG(8, 14);
+            const int Decorations = math::RANDOM_LONG(8, 14);
             for (int i = 0; i < Decorations; i++) {
-              random[0] =
-                  randomSrc[0] + dir[0] * CMathlib::RANDOM_FLOAT(-512, 512);
-              random[1] =
-                  randomSrc[1] + dir[1] * CMathlib::RANDOM_FLOAT(-512, 512);
-              random[2] =
-                  randomSrc[2] + dir[2] * CMathlib::RANDOM_FLOAT(-512, 512);
+              random[0] = randomSrc[0] + dir[0] * math::RANDOM_FLOAT(-512, 512);
+              random[1] = randomSrc[1] + dir[1] * math::RANDOM_FLOAT(-512, 512);
+              random[2] = randomSrc[2] + dir[2] * math::RANDOM_FLOAT(-512, 512);
               gEngfuncs.pEventAPI->EV_SetTraceHull(2);
               pmtrace_t DecorationTrace{};
               gEngfuncs.pEventAPI->EV_PlayerTrace(randomSrc, random,
@@ -232,7 +229,7 @@ static void gaussFire(float damage, bool secondary) {
       }
     } else {
       // 命中实体:推进到命中点后继续穿透
-      CMathlib::VectorAdd(trace.endpos, dir, src);
+      math::VectorAdd(trace.endpos, dir, src);
       entIgnore = trace.ent;
     }
   }

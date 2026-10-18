@@ -22,7 +22,7 @@
 
 namespace fx {
 
-using abc::CMathlib;
+namespace math = abc::math;
 
 void shootEgonParticle() {
   model_t *ballModel = gEngfuncs.hudGetModelByIndex(Precached.EgonBeam);
@@ -32,7 +32,7 @@ void shootEgonParticle() {
   if (!local)
     return;
   vec3_t src;
-  CMathlib::VectorCopy(local->attachment[0], src);
+  math::VectorCopy(local->attachment[0], src);
   TEMPENTITY *ball = gEngfuncs.pEfxAPI->CL_TempEntAlloc(src, ballModel);
   if (!ball)
     return;
@@ -40,22 +40,22 @@ void shootEgonParticle() {
   // AbcUi's data layer); trace straight ahead instead
   vec3_t viewAngles, forward, start, end, viewOfs;
   gEngfuncs.GetViewAngles(viewAngles);
-  CMathlib::AngleVectors(viewAngles, forward, nullptr, nullptr);
+  math::AngleVectors(viewAngles, forward, nullptr, nullptr);
   gEngfuncs.pEventAPI->EV_LocalPlayerViewheight(viewOfs);
-  CMathlib::VectorAdd(local->origin, viewOfs, start);
-  CMathlib::VectorMA(start, 4096.0f, forward, end);
+  math::VectorAdd(local->origin, viewOfs, start);
+  math::VectorMA(start, 4096.0f, forward, end);
   gEngfuncs.pEventAPI->EV_SetTraceHull(2);
   pmtrace_t trace;
   gEngfuncs.pEventAPI->EV_PlayerTrace(start, end, PM_STUDIO_BOX, -1, &trace);
 
   float speed = 4096;
   vec3_t toEnd, velocity;
-  CMathlib::VectorCopy(trace.endpos, toEnd);
-  CMathlib::VectorSubtract(toEnd, src, toEnd);
-  CMathlib::VectorCopy(toEnd, velocity);
-  CMathlib::VectorNormalize(velocity);
-  CMathlib::VectorScale(velocity, speed, velocity);
-  CMathlib::VectorCopy(velocity, ball->entity.baseline.origin);
+  math::VectorCopy(trace.endpos, toEnd);
+  math::VectorSubtract(toEnd, src, toEnd);
+  math::VectorCopy(toEnd, velocity);
+  math::VectorNormalize(velocity);
+  math::VectorScale(velocity, speed, velocity);
+  math::VectorCopy(velocity, ball->entity.baseline.origin);
   ball->flags = FTENT_SPRANIMATELOOP | FTENT_CLIENTCUSTOM;
   ball->clientIndex = static_cast<short>(gEngfuncs.GetLocalPlayer()->index);
   ball->bounceFactor = 0;
@@ -63,7 +63,7 @@ void shootEgonParticle() {
   ball->entity.curstate.solid = SOLID_NOT;
   ball->entity.curstate.owner =
       static_cast<short>(gEngfuncs.GetLocalPlayer()->index);
-  ball->entity.curstate.scale = CMathlib::RANDOM_FLOAT(0.2f, 0.4f);
+  ball->entity.curstate.scale = math::RANDOM_FLOAT(0.2f, 0.4f);
   ball->entity.curstate.renderamt = 255;
   ball->entity.curstate.rendercolor = EgonParticleColor;
   ball->entity.curstate.rendermode = kRenderTransAdd;
@@ -77,8 +77,8 @@ void shootEgonParticle() {
           ent->entity.prevstate.origin, ent->entity.model);
       if (!burst)
         return;
-      CMathlib::VectorCopy(ent->entity.baseline.origin,
-                           burst->entity.baseline.origin);
+      math::VectorCopy(ent->entity.baseline.origin,
+                       burst->entity.baseline.origin);
       burst->flags = FTENT_SPRANIMATELOOP | FTENT_COLLIDEWORLD | FTENT_FADEOUT |
                      FTENT_CLIENTCUSTOM;
       burst->clientIndex = ent->clientIndex;
@@ -116,7 +116,7 @@ void shootEgonParticle() {
   };
   ball->entity.curstate.fuser1 =
       static_cast<float>(gEngfuncs.GetClientTime()) +
-      static_cast<float>(CMathlib::FVectorLength(toEnd)) / speed - 0.007f;
+      static_cast<float>(math::FVectorLength(toEnd)) / speed - 0.007f;
   EgonNextShoot = gEngfuncs.GetClientTime() + 0.007f;
 }
 
