@@ -8,6 +8,6 @@ namespace camera {
 void init();
 // Third-person V_CalcRefdef body: shifts the view origin along the camera
 // right axis and up.
-void calcRefdef(struct ref_params_s* pparams);
+void calcRefdef(struct ref_params_s *pparams);
 
-}
+} // namespace camera

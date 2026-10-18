@@ -29,11 +29,11 @@ void shutdown();
 void resetWeapons();
 // HUD_TxferPredictionData feed: fires add_weapon/drop_weapon on ownership
 // changes, names resolved from WeaponList messages.
-void onTxferPredictionData(const struct weapon_data_s* wd);
+void onTxferPredictionData(const struct weapon_data_s *wd);
 
 // Replaces {param1}..{param4} in the registered command string and runs it.
-void triggerEvent(const char* eventname,
-	const char* param1 = nullptr, const char* param2 = nullptr,
-	const char* param3 = nullptr, const char* param4 = nullptr);
+void triggerEvent(const char *eventname, const char *param1 = nullptr,
+                  const char *param2 = nullptr, const char *param3 = nullptr,
+                  const char *param4 = nullptr);
 
-}
+} // namespace signals

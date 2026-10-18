@@ -15,48 +15,48 @@ namespace abcess {
 
 class IFeatureModule {
 public:
-	virtual ~IFeatureModule() = default;
+  virtual ~IFeatureModule() = default;
 
-	virtual const char* name() const = 0;
-	// HUD_Init, before the chained base init: register cvars/commands
-	// (08 §4.9 red line - never at LoadEngine).
-	virtual void onInit() {}
-	// HUD_Init, after the chained base init: bindings that reference
-	// base-HUD commands (concurrent replay).
-	virtual void onPostInit() {}
-	// HUD_VidInit.
-	virtual void onVidInit() {}
-	// HUD_Frame, after the task-manager pump.
-	virtual void onFrame() {}
-	// R_NewMap: per-map state (extra precache, cached indexes).
-	virtual void onNewMap() {}
-	// HUD_Shutdown, before the config is saved: persist module state.
-	virtual void onShutdown() {}
+  virtual const char *name() const = 0;
+  // HUD_Init, before the chained base init: register cvars/commands
+  // (08 §4.9 red line - never at LoadEngine).
+  virtual void onInit() {}
+  // HUD_Init, after the chained base init: bindings that reference
+  // base-HUD commands (concurrent replay).
+  virtual void onPostInit() {}
+  // HUD_VidInit.
+  virtual void onVidInit() {}
+  // HUD_Frame, after the task-manager pump.
+  virtual void onFrame() {}
+  // R_NewMap: per-map state (extra precache, cached indexes).
+  virtual void onNewMap() {}
+  // HUD_Shutdown, before the config is saved: persist module state.
+  virtual void onShutdown() {}
 };
 
 class ModuleRegistry {
 public:
-	static constexpr size_t kMaxModules = 16;
+  static constexpr size_t kMaxModules = 16;
 
-	// Constant-initialized (all-zero), so add() is safe from any static
-	// initializer in the DLL regardless of translation-unit order.
-	constexpr ModuleRegistry() = default;
+  // Constant-initialized (all-zero), so add() is safe from any static
+  // initializer in the DLL regardless of translation-unit order.
+  constexpr ModuleRegistry() = default;
 
-	void add(IFeatureModule* module);
+  void add(IFeatureModule *module);
 
-	void initAll();
-	void postInitAll();
-	void vidInitAll();
-	void frameAll();
-	void newMapAll();
-	void shutdownAll();
+  void initAll();
+  void postInitAll();
+  void vidInitAll();
+  void frameAll();
+  void newMapAll();
+  void shutdownAll();
 
 private:
-	IFeatureModule* Modules[kMaxModules] = {};
-	size_t Count = 0;
+  IFeatureModule *Modules[kMaxModules] = {};
+  size_t Count = 0;
 };
 
 // Per-DLL singleton.
-ModuleRegistry& moduleRegistry();
+ModuleRegistry &moduleRegistry();
 
-}
+} // namespace abcess

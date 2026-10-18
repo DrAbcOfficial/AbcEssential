@@ -23,12 +23,12 @@
 
 namespace fx {
 
-cvar_t* ShellEfxCvar;
-cvar_t* BloodEfxCvar;
-cvar_t* BloodSpriteSpeedCvar;
-cvar_t* BloodSpriteNumberCvar;
-cvar_t* GaussEfxCvar;
-cvar_t* EgonEfxCvar;
+cvar_t *ShellEfxCvar;
+cvar_t *BloodEfxCvar;
+cvar_t *BloodSpriteSpeedCvar;
+cvar_t *BloodSpriteNumberCvar;
+cvar_t *GaussEfxCvar;
+cvar_t *EgonEfxCvar;
 
 PrecacheIndexes Precached = {};
 color24 EgonParticleColor = {};
@@ -37,45 +37,62 @@ bool EgonShooter = false;
 float EgonNextShoot = 0.0f;
 
 void init() {
-	ShellEfxCvar = abc::CREATE_CVAR("abc_shellefx", "1", abc::FCVAR_VALUE, nullptr);
-	BloodEfxCvar = abc::CREATE_CVAR("abc_bloodefx", "1", abc::FCVAR_VALUE, nullptr);
-	BloodSpriteSpeedCvar = abc::CREATE_CVAR("abc_bloodsprite_speed", "128", abc::FCVAR_VALUE, nullptr);
-	BloodSpriteNumberCvar = abc::CREATE_CVAR("abc_bloodsprite_num", "32", abc::FCVAR_VALUE, nullptr);
-	GaussEfxCvar = abc::CREATE_CVAR("abc_gaussefx", "1", abc::FCVAR_VALUE, nullptr);
-	EgonEfxCvar = abc::CREATE_CVAR("abc_egonefx", "1", abc::FCVAR_VALUE, nullptr);
+  ShellEfxCvar =
+      abc::CREATE_CVAR("abc_shellefx", "1", abc::FCVAR_VALUE, nullptr);
+  BloodEfxCvar =
+      abc::CREATE_CVAR("abc_bloodefx", "1", abc::FCVAR_VALUE, nullptr);
+  BloodSpriteSpeedCvar = abc::CREATE_CVAR("abc_bloodsprite_speed", "128",
+                                          abc::FCVAR_VALUE, nullptr);
+  BloodSpriteNumberCvar =
+      abc::CREATE_CVAR("abc_bloodsprite_num", "32", abc::FCVAR_VALUE, nullptr);
+  GaussEfxCvar =
+      abc::CREATE_CVAR("abc_gaussefx", "1", abc::FCVAR_VALUE, nullptr);
+  EgonEfxCvar = abc::CREATE_CVAR("abc_egonefx", "1", abc::FCVAR_VALUE, nullptr);
 }
 
 void newMap() {
-	extraprecache::clear();
-	EgonMessageNum = 0;
-	EgonShooter = false;
-	EgonNextShoot = 0;
-	Precached.GaussBeam = extraprecache::precache("sprites/laserbeam.spr");
-	Precached.GaussWaveBeam = extraprecache::precache("abcenchance/spr/gauss_wave.spr");
-	Precached.GaussLoophole = extraprecache::precache("abcenchance/mdl/gauss_loophole.mdl");
-	Precached.GunSmoke = extraprecache::precache("sprites/Puff1.spr");
-	Precached.EgonBeam = extraprecache::precache("abcenchance/spr/egon_ball.spr");
+  extraprecache::clear();
+  EgonMessageNum = 0;
+  EgonShooter = false;
+  EgonNextShoot = 0;
+  Precached.GaussBeam = extraprecache::precache("sprites/laserbeam.spr");
+  Precached.GaussWaveBeam =
+      extraprecache::precache("abcenchance/spr/gauss_wave.spr");
+  Precached.GaussLoophole =
+      extraprecache::precache("abcenchance/mdl/gauss_loophole.mdl");
+  Precached.GunSmoke = extraprecache::precache("sprites/Puff1.spr");
+  Precached.EgonBeam = extraprecache::precache("abcenchance/spr/egon_ball.spr");
 }
 
 void frame() {
-	cl_entity_t* local = gEngfuncs.GetLocalPlayer();
-	if (!local || !EgonEfxCvar || EgonEfxCvar->value <= 0 ||
-		EgonMessageNum != local->curstate.messagenum)
-		EgonShooter = false;
-	if (EgonShooter && gEngfuncs.GetClientTime() >= EgonNextShoot)
-		shootEgonParticle();
+  cl_entity_t *local = gEngfuncs.GetLocalPlayer();
+  if (!local || !EgonEfxCvar || EgonEfxCvar->value <= 0 ||
+      EgonMessageNum != local->curstate.messagenum)
+    EgonShooter = false;
+  if (EgonShooter && gEngfuncs.GetClientTime() >= EgonNextShoot)
+    shootEgonParticle();
 }
 
 namespace {
 class EfxModule final : public abcess::IFeatureModule {
 public:
-	EfxModule() { abcess::moduleRegistry().add(this); }
-	const char* name() const override { return "efx"; }
-	void onInit() override { init(); }
-	void onNewMap() override { newMap(); }
-	void onFrame() override { frame(); }
+  EfxModule() {
+    abcess::moduleRegistry().add(this);
+  }
+  const char *name() const override {
+    return "efx";
+  }
+  void onInit() override {
+    init();
+  }
+  void onNewMap() override {
+    newMap();
+  }
+  void onFrame() override {
+    frame();
+  }
 };
 const EfxModule RegisterModule;
-}
+} // namespace
 
-}
+} // namespace fx

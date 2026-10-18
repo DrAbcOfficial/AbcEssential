@@ -29,23 +29,32 @@ namespace hooks {
 // the engine API spelling (gEngfuncs/pEfxAPI mirrors) for recognizability -
 // coding standard 09 §8 exception.
 struct HookedFuncs {
-	// chain-owned: engine efx API originals (detoured in place)
-	void (*R_BloodSprite)(float* org, int colorindex, int modelIndex, int modelIndex2, float size);
-	TEMPENTITY* (*R_TempModel)(float* pos, float* dir, float* angles, float life, int modelIndex, int soundtype);
-	// chain-owned: engine engfunc original (detoured)
-	void (*pfnPlaybackEvent)(int flags, const struct edict_s* pInvoker, unsigned short eventindex, float delay, float* origin, float* angles,
-		float fparam1, float fparam2, int iparam1, int iparam2, int bparam1, int bparam2);
-	// chain-owned: engine sig-scanned originals (detoured)
-	void (*R_NewMap)();
-	model_t* (*CL_GetModelByIndex)(int index);
-	// chain-owned: client.dll detoured only to capture ClientSoundEngine
-	void (__fastcall* CClient_SoundEngine_Initialize)(void* pSoundEngine, int dummy);
-	// direct-call: client.dll sig-scanned, no detour
-	void (__fastcall* CClient_SoundEngine_PlayFMODSound)(void* pSoundEngine, int dummy, int flags, int entindex, float* origin,
-		int channel, const char* name, float fvol, float attenuation, int extraflags, int pitch, int sentenceIndex, float soundLength);
-	void (*V_PunchAxis)(int axis, float punch);
-	// captured by the CClient_SoundEngine_Initialize detour ("this" of the FMOD wrapper)
-	void* ClientSoundEngine;
+  // chain-owned: engine efx API originals (detoured in place)
+  void (*R_BloodSprite)(float *org, int colorindex, int modelIndex,
+                        int modelIndex2, float size);
+  TEMPENTITY *(*R_TempModel)(float *pos, float *dir, float *angles, float life,
+                             int modelIndex, int soundtype);
+  // chain-owned: engine engfunc original (detoured)
+  void (*pfnPlaybackEvent)(int flags, const struct edict_s *pInvoker,
+                           unsigned short eventindex, float delay,
+                           float *origin, float *angles, float fparam1,
+                           float fparam2, int iparam1, int iparam2, int bparam1,
+                           int bparam2);
+  // chain-owned: engine sig-scanned originals (detoured)
+  void (*R_NewMap)();
+  model_t *(*CL_GetModelByIndex)(int index);
+  // chain-owned: client.dll detoured only to capture ClientSoundEngine
+  void(__fastcall *CClient_SoundEngine_Initialize)(void *pSoundEngine,
+                                                   int dummy);
+  // direct-call: client.dll sig-scanned, no detour
+  void(__fastcall *CClient_SoundEngine_PlayFMODSound)(
+      void *pSoundEngine, int dummy, int flags, int entindex, float *origin,
+      int channel, const char *name, float fvol, float attenuation,
+      int extraflags, int pitch, int sentenceIndex, float soundLength);
+  void (*V_PunchAxis)(int axis, float punch);
+  // captured by the CClient_SoundEngine_Initialize detour ("this" of the FMOD
+  // wrapper)
+  void *ClientSoundEngine;
 };
 extern HookedFuncs Hooks;
 
@@ -59,6 +68,6 @@ void installClientHooks();
 // HUD_Shutdown time.
 void uninstallClientHooks();
 // LoadClient time: chain our HUD_XXX implementations into the export table.
-void attachExports(cl_exportfuncs_t* pExportFuncs);
+void attachExports(cl_exportfuncs_t *pExportFuncs);
 
-}
+} // namespace hooks

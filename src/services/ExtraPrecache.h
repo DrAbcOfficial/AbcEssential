@@ -13,12 +13,12 @@ struct engine_studio_api_s;
 namespace extraprecache {
 
 // Capture the studio API used to load out-of-band models.
-void setEngineStudio(const engine_studio_api_s* studio);
+void setEngineStudio(const engine_studio_api_s *studio);
 
-model_s* getByModelIndex(int index);
-int getIndex(const char* path);
-int precache(const char* path);
+model_s *getByModelIndex(int index);
+int getIndex(const char *path);
+int precache(const char *path);
 // R_NewMap: release every out-of-band model (per-map lifetimes).
 void clear();
 
-}
+} // namespace extraprecache

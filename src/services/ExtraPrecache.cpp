@@ -19,57 +19,58 @@ constexpr int kMaxModels = 255;
 constexpr int kNeedLoadUnreferenced = 2; // NL_UNREFERENCED
 constexpr int kNeedLoadClient = 3;       // NL_CLIENT
 
-model_t* PrecachedModels[kMaxModels] = {};
+model_t *PrecachedModels[kMaxModels] = {};
 int ModelCount = 0;
-const engine_studio_api_t* Studio = nullptr;
+const engine_studio_api_t *Studio = nullptr;
 
+} // namespace
+
+void setEngineStudio(const engine_studio_api_s *studio) {
+  Studio = studio;
 }
 
-void setEngineStudio(const engine_studio_api_s* studio) {
-	Studio = studio;
+model_t *getByModelIndex(int index) {
+  if (index >= kIndexBase && index < kIndexBase + kMaxModels)
+    return PrecachedModels[index - kIndexBase];
+  return nullptr;
 }
 
-model_t* getByModelIndex(int index) {
-	if (index >= kIndexBase && index < kIndexBase + kMaxModels)
-		return PrecachedModels[index - kIndexBase];
-	return nullptr;
+int getIndex(const char *path) {
+  for (int i = 0; i < ModelCount; i++) {
+    if (!PrecachedModels[i])
+      continue;
+    if (!strcmp(path, PrecachedModels[i]->name))
+      return i + kIndexBase;
+  }
+  return -1;
 }
 
-int getIndex(const char* path) {
-	for (int i = 0; i < ModelCount; i++) {
-		if (!PrecachedModels[i])
-			continue;
-		if (!strcmp(path, PrecachedModels[i]->name))
-			return i + kIndexBase;
-	}
-	return -1;
-}
-
-int precache(const char* path) {
-	int index = getIndex(path);
-	if (index > -1)
-		return index;
-	if (!Studio || ModelCount >= kMaxModels)
-		return -1;
-	PrecachedModels[ModelCount] = Studio->Mod_ForName(path, false);
-	if (!PrecachedModels[ModelCount]) {
-		abc::ConsoleWarn("[AbcEssential] optional effect asset unavailable: %s\n", path);
-		return -1;
-	}
-	PrecachedModels[ModelCount]->needload = kNeedLoadClient;
-	index = ModelCount + kIndexBase;
-	ModelCount++;
-	return index;
+int precache(const char *path) {
+  int index = getIndex(path);
+  if (index > -1)
+    return index;
+  if (!Studio || ModelCount >= kMaxModels)
+    return -1;
+  PrecachedModels[ModelCount] = Studio->Mod_ForName(path, false);
+  if (!PrecachedModels[ModelCount]) {
+    abc::ConsoleWarn("[AbcEssential] optional effect asset unavailable: %s\n",
+                     path);
+    return -1;
+  }
+  PrecachedModels[ModelCount]->needload = kNeedLoadClient;
+  index = ModelCount + kIndexBase;
+  ModelCount++;
+  return index;
 }
 
 void clear() {
-	for (int i = 0; i < ModelCount; i++) {
-		if (PrecachedModels[i]) {
-			PrecachedModels[i]->needload = kNeedLoadUnreferenced;
-			PrecachedModels[i] = nullptr;
-		}
-	}
-	ModelCount = 0;
+  for (int i = 0; i < ModelCount; i++) {
+    if (PrecachedModels[i]) {
+      PrecachedModels[i]->needload = kNeedLoadUnreferenced;
+      PrecachedModels[i] = nullptr;
+    }
+  }
+  ModelCount = 0;
 }
 
-}
+} // namespace extraprecache

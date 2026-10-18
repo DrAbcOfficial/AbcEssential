@@ -17,28 +17,30 @@
 
 class AbcEssentialPlugin : public abc::CAbcPluginBase {
 public:
-	AbcEssentialPlugin() : abc::CAbcPluginBase("AbcEssential", abcess::kVersion) {}
+  AbcEssentialPlugin()
+      : abc::CAbcPluginBase("AbcEssential", abcess::kVersion) {}
 
 protected:
-	void OnLoadEngine() override {
-		// engine sig scans + efx/engfunc inline hooks; no cvar/command
-		// registration here (LoadEngine-time registration crashes, 08 §4.9)
-		hooks::fillEngineAddress();
-		hooks::installEngineHooks();
-	}
+  void OnLoadEngine() override {
+    // engine sig scans + efx/engfunc inline hooks; no cvar/command
+    // registration here (LoadEngine-time registration crashes, 08 §4.9)
+    hooks::fillEngineAddress();
+    hooks::installEngineHooks();
+  }
 
-	void OnLoadClient(cl_exportfuncs_t* pExportFuncs) override {
-		hooks::fillClientAddress();
-		hooks::installClientHooks();
-		hooks::attachExports(pExportFuncs);
-		abcess::loadConfig();
-		abc::ConsolePrint("[AbcEssential] loaded %s\n", Version());
-	}
+  void OnLoadClient(cl_exportfuncs_t *pExportFuncs) override {
+    hooks::fillClientAddress();
+    hooks::installClientHooks();
+    hooks::attachExports(pExportFuncs);
+    abcess::loadConfig();
+    abc::ConsolePrint("[AbcEssential] loaded %s\n", Version());
+  }
 
-	void OnExitGame(int iResult) override {
-		hooks::uninstallEngineHooks();
-		abc::GetTaskManager()->Shutdown();
-	}
+  void OnExitGame(int iResult) override {
+    hooks::uninstallEngineHooks();
+    abc::GetTaskManager()->Shutdown();
+  }
 };
 
-EXPOSE_SINGLE_INTERFACE(AbcEssentialPlugin, IPluginsV4, METAHOOK_PLUGIN_API_VERSION_V4);
+EXPOSE_SINGLE_INTERFACE(AbcEssentialPlugin, IPluginsV4,
+                        METAHOOK_PLUGIN_API_VERSION_V4);

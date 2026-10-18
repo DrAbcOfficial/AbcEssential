@@ -12,10 +12,10 @@ void init();
 // Writes concurrent bindings back into the plugin config (HUD_Shutdown).
 void shutdown();
 
-void autoJump(struct usercmd_s* cmd);
-void duckTap(struct usercmd_s* cmd);
+void autoJump(struct usercmd_s *cmd);
+void duckTap(struct usercmd_s *cmd);
 
 // Movement-state feed wired by src/hooks.cpp (HUD_PlayerMove).
 void onPlayerMove(bool inWater, bool onGround, bool walking);
 
-}
+} // namespace autofunc

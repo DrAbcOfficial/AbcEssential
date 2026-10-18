@@ -4,53 +4,54 @@
 
 namespace abcess {
 
-ModuleRegistry& moduleRegistry() {
-	static ModuleRegistry registry;
-	return registry;
+ModuleRegistry &moduleRegistry() {
+  static ModuleRegistry registry;
+  return registry;
 }
 
-void ModuleRegistry::add(IFeatureModule* module) {
-	if (!module)
-		return;
-	for (size_t i = 0; i < Count; ++i)
-		if (Modules[i] == module)
-			return;
-	if (Count >= kMaxModules) {
-		abc::ConsoleWarn("[AbcEssential] module registry full (%zu), '%s' not registered\n",
-			kMaxModules, module->name());
-		return;
-	}
-	Modules[Count++] = module;
+void ModuleRegistry::add(IFeatureModule *module) {
+  if (!module)
+    return;
+  for (size_t i = 0; i < Count; ++i)
+    if (Modules[i] == module)
+      return;
+  if (Count >= kMaxModules) {
+    abc::ConsoleWarn(
+        "[AbcEssential] module registry full (%zu), '%s' not registered\n",
+        kMaxModules, module->name());
+    return;
+  }
+  Modules[Count++] = module;
 }
 
 void ModuleRegistry::initAll() {
-	for (size_t i = 0; i < Count; i++)
-		Modules[i]->onInit();
+  for (size_t i = 0; i < Count; i++)
+    Modules[i]->onInit();
 }
 
 void ModuleRegistry::postInitAll() {
-	for (size_t i = 0; i < Count; i++)
-		Modules[i]->onPostInit();
+  for (size_t i = 0; i < Count; i++)
+    Modules[i]->onPostInit();
 }
 
 void ModuleRegistry::vidInitAll() {
-	for (size_t i = 0; i < Count; i++)
-		Modules[i]->onVidInit();
+  for (size_t i = 0; i < Count; i++)
+    Modules[i]->onVidInit();
 }
 
 void ModuleRegistry::frameAll() {
-	for (size_t i = 0; i < Count; i++)
-		Modules[i]->onFrame();
+  for (size_t i = 0; i < Count; i++)
+    Modules[i]->onFrame();
 }
 
 void ModuleRegistry::newMapAll() {
-	for (size_t i = 0; i < Count; i++)
-		Modules[i]->onNewMap();
+  for (size_t i = 0; i < Count; i++)
+    Modules[i]->onNewMap();
 }
 
 void ModuleRegistry::shutdownAll() {
-	for (size_t i = 0; i < Count; i++)
-		Modules[i]->onShutdown();
+  for (size_t i = 0; i < Count; i++)
+    Modules[i]->onShutdown();
 }
 
-}
+} // namespace abcess
