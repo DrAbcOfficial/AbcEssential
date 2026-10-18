@@ -46,7 +46,7 @@ void createGaussLoophole(pmtrace_t *trace) {
   temp->entity.angles[2] += 180;
   temp->die = gEngfuncs.GetClientTime() + 1.0f;
   temp->flags = FTENT_CLIENTCUSTOM | FTENT_FADEOUT;
-  temp->callback = [](struct tempent_s *ent, float frametime,
+  temp->callback = [](struct tempent_s *ent, float /*frametime*/,
                       float currenttime) {
     ent->entity.curstate.scale = ent->die - currenttime;
   };
@@ -242,6 +242,15 @@ bool playbackEvent(int flags, const struct edict_s *pInvoker,
                    unsigned short eventindex, float delay, float *origin,
                    float *angles, float fparam1, float fparam2, int iparam1,
                    int iparam2, int bparam1, int bparam2) {
+  (void)flags;
+  (void)pInvoker;
+  (void)delay;
+  (void)origin;
+  (void)angles;
+  (void)fparam2;
+  (void)iparam1;
+  (void)iparam2;
+  (void)bparam2;
   // 高斯主开火 flag 3, index 12;高斯转轮 flag1, index 13
   if (eventindex == 12 && GaussEfxCvar && GaussEfxCvar->value > 0 &&
       Precached.GaussBeam >= 0 && Precached.GaussWaveBeam >= 0 &&

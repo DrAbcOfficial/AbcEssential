@@ -57,18 +57,19 @@ void shootEgonParticle() {
   CMathlib::VectorScale(velocity, speed, velocity);
   CMathlib::VectorCopy(velocity, ball->entity.baseline.origin);
   ball->flags = FTENT_SPRANIMATELOOP | FTENT_CLIENTCUSTOM;
-  ball->clientIndex = gEngfuncs.GetLocalPlayer()->index;
+  ball->clientIndex = static_cast<short>(gEngfuncs.GetLocalPlayer()->index);
   ball->bounceFactor = 0;
   ball->entity.baseline.renderamt = 80;
   ball->entity.curstate.solid = SOLID_NOT;
-  ball->entity.curstate.owner = gEngfuncs.GetLocalPlayer()->index;
+  ball->entity.curstate.owner =
+      static_cast<short>(gEngfuncs.GetLocalPlayer()->index);
   ball->entity.curstate.scale = CMathlib::RANDOM_FLOAT(0.2f, 0.4f);
   ball->entity.curstate.renderamt = 255;
   ball->entity.curstate.rendercolor = EgonParticleColor;
   ball->entity.curstate.rendermode = kRenderTransAdd;
   ball->entity.curstate.frame = 0;
   ball->entity.curstate.framerate = 10.0f * ballModel->numframes; // 1s
-  ball->callback = [](struct tempent_s *ent, float frametime,
+  ball->callback = [](struct tempent_s *ent, float /*frametime*/,
                       float currenttime) {
     if (currenttime >= ent->entity.curstate.fuser1) {
       ent->die = 0;
@@ -102,7 +103,7 @@ void shootEgonParticle() {
           hit->entity.curstate.iuser1 = 1;
         }
       };
-      burst->callback = [](struct tempent_s *dying, float frametime,
+      burst->callback = [](struct tempent_s *dying, float /*frametime*/,
                            float currenttime) {
         if (currenttime >= dying->die) {
           dying->entity.baseline.origin[0] = 0;
@@ -110,12 +111,12 @@ void shootEgonParticle() {
           dying->entity.baseline.origin[2] = 0;
         }
       };
-      burst->die = currenttime + 0.007;
+      burst->die = static_cast<float>(currenttime) + 0.007f;
     }
   };
-  ball->entity.curstate.fuser1 = gEngfuncs.GetClientTime() +
-                                 CMathlib::FVectorLength(toEnd) / speed -
-                                 0.007f;
+  ball->entity.curstate.fuser1 =
+      static_cast<float>(gEngfuncs.GetClientTime()) +
+      static_cast<float>(CMathlib::FVectorLength(toEnd)) / speed - 0.007f;
   EgonNextShoot = gEngfuncs.GetClientTime() + 0.007f;
 }
 

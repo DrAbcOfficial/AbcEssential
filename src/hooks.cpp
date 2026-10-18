@@ -84,10 +84,9 @@ static void __fastcall H_CClient_SoundEngine_Initialize(void *pSoundEngine,
 #pragma region Export-table thunks (chained)
 static void registerGlobalCvars() {
   // read-only version stamp: any write snaps back (old PLUGIN_VERSION cvar)
-  abc::CREATE_CVAR("abc_version", abcess::kVersion,
-                   FCVAR_EXTDLL | FCVAR_CLIENTDLL, [](cvar_t *cvar) {
-                     abc::CVAR_SET_STRING("abc_version", abcess::kVersion);
-                   });
+  abc::CREATE_CVAR(
+      "abc_version", abcess::kVersion, FCVAR_EXTDLL | FCVAR_CLIENTDLL,
+      [](cvar_t *) { abc::CVAR_SET_STRING("abc_version", abcess::kVersion); });
 }
 
 static void H_HUD_Init() {

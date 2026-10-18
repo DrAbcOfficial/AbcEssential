@@ -5,8 +5,8 @@
 namespace abcess {
 
 ModuleRegistry &moduleRegistry() {
-  static ModuleRegistry registry;
-  return registry;
+  static ModuleRegistry instance;
+  return instance;
 }
 
 void ModuleRegistry::add(IFeatureModule *module) {
