@@ -116,7 +116,7 @@ void init() {
   abc::ADD_COMMAND("removeconcurrent", []() {
     size_t argc = gEngfuncs.Cmd_Argc();
     if (argc < 2) {
-      abc::ConsoleWriteline("remove_concurrent [target command]\n");
+      abc::ConsoleWriteline("removeconcurrent [target command]\n");
       return;
     }
     removeConcurrent(gEngfuncs.Cmd_Argv(1));

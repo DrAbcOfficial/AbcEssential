@@ -9,7 +9,7 @@ Zero rendering dependencies: no IMetaRenderer is loaded and Renderer.dll is not 
 ```text
 src/
 ├── plugins.cpp            # entry point (CAbcPluginBase + EXPOSE_SINGLE_INTERFACE)
-├── hooks.h/.cpp           # sig-scan, inline-hook install/remove, chained export thunks (single owner of the chain)
+├── hooks.h/.cpp           # gamedata symbol resolution, inline-hook install/remove, chained export thunks (single owner of the chain)
 ├── services/              # plugin-level services
 │   ├── Config.h/.cpp      #   config schema + one-shot legacy import
 │   ├── ExtraPrecache.h/.cpp
