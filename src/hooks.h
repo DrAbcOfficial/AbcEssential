@@ -10,7 +10,9 @@
 //
 // Chain semantics (R-2): every HUD_XXX export thunk calls its gExportfuncs
 // counterpart (the entry that was in the table before us), so plugins loaded
-// after AbcEssential keep a working export table.
+// after AbcEssential keep a working export table. Ownership order is
+// "AbcEssential hooks first, AbcUi hooks second"; both sides chain to the
+// predecessor and never rewrite the table from a feature module.
 
 #include <metahook.h>
 #include <com_model.h>
