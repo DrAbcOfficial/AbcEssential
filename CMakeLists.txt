@@ -40,6 +40,7 @@ add_library(AbcEssential MODULE
 )
 target_compile_definitions(AbcEssential PRIVATE WIN32 _WINDOWS _USRDLL _CRT_SECURE_NO_WARNINGS)
 target_compile_options(AbcEssential PRIVATE /W4 /FIabc/ForceImport.h)
+target_compile_definitions(AbcEssential PRIVATE ABC_CORE_STATIC)
 target_link_libraries(AbcEssential PRIVATE Abc::Core)
 
 include("${ABC_CORE_DIR}/cmake/AbcGameData.cmake")
