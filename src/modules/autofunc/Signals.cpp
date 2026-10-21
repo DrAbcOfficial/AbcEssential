@@ -13,6 +13,7 @@
 #include <array>
 #include <cstring>
 #include <map>
+#include <cstdint>
 #include <string>
 
 #include <metahook.h>
@@ -21,6 +22,7 @@
 
 #include <abc/CvarCmd.h>
 #include <abc/Console.h>
+#include <abc/Plugin.h>
 #include <abc/NetMsg.h>
 
 #include "../../services/Config.h"
@@ -137,15 +139,23 @@ DEFINE_SIGNAL_HOOK(FlashBat) {
   return CHAIN_ORIGINAL(FlashBat);
 }
 
-// HookUserMsg returns the previous handler. A second install (a new HUD_Init
-// cycle) returns our own hook; the real predecessor is already stored, so
-// only a foreign predecessor is adopted. This keeps the chain correct when
-// the engine rebuilt the client's usermsg table in between.
+// HookUserMsg returns the previous handler. A refresh after a client reload
+// may report our own hook back; the real predecessor is already stored, so
+// only a foreign predecessor is adopted.
 void installHook(const char *name, pfnUserMsgHook hook,
                  pfnUserMsgHook &original) {
   pfnUserMsgHook previous = g_pMetaHookAPI->HookUserMsg(name, hook);
   if (previous && previous != hook)
     original = previous;
+}
+
+// True when the address is a function inside the loaded client image. A
+// client-rebuilt usermsg table points at client handlers; a chain another
+// plugin still owns points outside the image.
+bool isClientCode(uintptr_t address) {
+  const auto base = reinterpret_cast<uintptr_t>(abc::g_dwClientBase);
+  return base && abc::g_dwClientSize && address >= base &&
+         address - base < abc::g_dwClientSize;
 }
 
 void registerUserMsgHooks() {
@@ -223,10 +233,26 @@ void init() {
         break;
       }
     });
+    registerUserMsgHooks();
   }
   // replay persisted event bindings
   EventCmds = abcess::config()->EventsCmds;
 
+  refreshAfterClientLoad();
+}
+
+void refreshAfterClientLoad() {
+  // A client DLL reload re-registers its usermsg table, replacing our hooks
+  // and leaving the stored predecessors pointing into the old image. Re-chain
+  // only then. AbcEssential hooks this table before AbcUi, so after a rebuild
+  // the head is still the client's own handler here; a plugin hook means the
+  // table was not rebuilt and the existing chain must stay untouched (two
+  // plugins re-hooking each other would recurse forever).
+  if (!g_pMetaHookAPI->FindUserMsgHook)
+    return;
+  usermsg_t *probe = g_pMetaHookAPI->FindUserMsgHook("CurWeapon");
+  if (!probe || !isClientCode(reinterpret_cast<uintptr_t>(probe->function)))
+    return;
   registerUserMsgHooks();
 }
 

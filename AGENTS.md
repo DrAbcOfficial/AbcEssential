@@ -50,11 +50,15 @@ cmake --build --preset win32-debug    # Release: win32-release
   released: the client detour (`installClientHooks`, idempotent through the
   owned list plus `FindInlineHook`) and the post-chain replay
   (`moduleRegistry().postInitAll()`, which rebuilds the destroyed concurrent
-  command chains and re-installs the six usermsg hooks).
-- `autofunc::init` and `signals::init` keep their command registration behind a
-  one-shot latch but replay persisted bindings and re-hook usermsg handlers on
-  every call; the re-hook helper ignores its own previous handler so the chain
-  never becomes recursive. Do not add a second unconditional `HOOK_MESSAGE`.
+  command chains). The six usermsg hooks are installed once and re-chained by
+  `signals::refreshAfterClientLoad()` only after a client DLL reload detected
+  through the client image; re-hooking on every cycle would make this chain
+  and AbcUi's point at each other.
+- `autofunc::init` and `signals::init` keep their command registration and
+  usermsg install behind a one-shot latch but replay persisted bindings on
+  every call; `signals::refreshAfterClientLoad` is the only re-hook path and
+  it is probe-gated (the helper still ignores its own previous handler). Do
+  not add an unconditional `HOOK_MESSAGE` outside that path.
 - `CHAIN_ORIGINAL` tolerates a message the client did not register (null
   predecessor); keep that guard when adding signal sources.
 - The effect assets under `assets/svencoop/abc/` are runtime dependencies of

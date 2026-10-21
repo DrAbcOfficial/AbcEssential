@@ -19,9 +19,12 @@ constexpr char kEventFlashBattery[] = "flash_battery";
 constexpr char kEventAddWeapon[] = "add_weapon";
 constexpr char kEventDropWeapon[] = "drop_weapon";
 
-// Registers the `events` command + the UserMsg hooks below and replays
-// persisted event bindings (HUD_Init, after the base chain).
+// Registers the `events` command + the UserMsg hooks below once per process
+// and replays persisted event bindings (HUD_Init, after the base chain).
 void init();
+// HUD_Init: re-chains the usermsg hooks after a client DLL reload rebuilt the
+// table (probe-gated). A normal map cycle leaves the chain untouched.
+void refreshAfterClientLoad();
 // Writes event bindings back into the plugin config (HUD_Shutdown).
 void shutdown();
 
