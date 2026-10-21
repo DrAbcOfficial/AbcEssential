@@ -50,10 +50,15 @@ if(ABC_GAME_DIR)
     install(TARGETS AbcEssential
         RUNTIME DESTINATION "${ABC_GAME_DIR}/svencoop/metahook/plugins"
         LIBRARY DESTINATION "${ABC_GAME_DIR}/svencoop/metahook/plugins")
+    # Effect assets (gauss/egon sprites and the loophole model) are loaded at
+    # run time as abc/spr/... and abc/mdl/... relative to the mod dir. Without
+    # them the gauss rework gate and the egon particle ball silently fall back.
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/svencoop/abc"
+        DESTINATION "${ABC_GAME_DIR}/svencoop")
     add_custom_target(deploy
         DEPENDS AbcEssential
         COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}" --config "$<CONFIG>"
-        COMMENT "Deploying AbcEssential.dll to ${ABC_GAME_DIR}/svencoop/metahook/plugins")
+        COMMENT "Deploying AbcEssential.dll and its assets to ${ABC_GAME_DIR}")
 endif()
 
 # --- Packaging ---------------------------------------------------------------
@@ -61,6 +66,7 @@ endif()
 # AbcEssential-<version>.zip, laid out to unpack into the Sven Co-op root:
 #   AbcEssential-<version>/svencoop/metahook/plugins/AbcEssential.dll
 #   AbcEssential-<version>/svencoop/metahook/gamedata/abc/abcessential/** (generated symbols)
+#   AbcEssential-<version>/svencoop/abc/{spr,mdl}/** (effect assets)
 #   AbcEssential-<version>/README.md
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/src/services/Version.h" ABC_ESSENTIAL_VERSION_LINE
     REGEX "kVersion")
@@ -81,6 +87,9 @@ add_custom_target(dist
     COMMAND "${CMAKE_COMMAND}" -E copy_directory
         "${CMAKE_BINARY_DIR}/assets/svencoop/metahook/gamedata/abc/abcessential"
         "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/metahook/gamedata/abc/abcessential"
+    COMMAND "${CMAKE_COMMAND}" -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets/svencoop/abc"
+        "${ABC_ESSENTIAL_STAGE_DIR}/svencoop/abc"
     COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/README.md" "${ABC_ESSENTIAL_STAGE_DIR}/"
     COMMAND "${CMAKE_COMMAND}" -E tar cfv "AbcEssential-${ABC_ESSENTIAL_VERSION}.zip" --format=zip
         "AbcEssential-${ABC_ESSENTIAL_VERSION}"
