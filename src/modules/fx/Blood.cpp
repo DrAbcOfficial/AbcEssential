@@ -40,9 +40,13 @@ void bloodSprite(float *org, int colorindex, int modelIndex, int modelIndex2,
   sprite->entity.curstate.rendercolor.r = paletteColor.r;
   sprite->entity.curstate.rendercolor.g = paletteColor.g;
   sprite->entity.curstate.rendercolor.b = paletteColor.b;
-  sprite->entity.curstate.framerate = 10.0f * spriteModel->numframes; // 1s
-  sprite->die = gEngfuncs.GetClientTime() +
-                (spriteModel->numframes / sprite->entity.curstate.framerate);
+  // framerate is frames per second (engine: frame += framerate * frametime),
+  // so numframes plays the whole sprite in exactly 1 s. The old 10*numframes
+  // played it ten times too fast and the spray vanished after 0.1 s.
+  sprite->entity.curstate.framerate = static_cast<float>(spriteModel->numframes);
+  sprite->die =
+      gEngfuncs.GetClientTime() +
+      (spriteModel->numframes / sprite->entity.curstate.framerate);
   sprite->entity.angles[2] = math::RANDOM_FLOAT(0, 360);
   sprite->bounceFactor = 0;
   vec3_t offset, dir;
