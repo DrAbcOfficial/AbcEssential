@@ -41,3 +41,27 @@ cmake --build --preset win32-debug    # Release: win32-release
   documented in `src/hooks.h`.
 - Commit messages use `type(scope): summary` (feat / fix / refactor / docs / build / chore) with motivation and verification in the body.
 - Before handing off: no local paths or credentials; README matches actual behaviour; Debug and Release both build.
+
+## Lifecycle and runtime contracts
+
+- HUD_Init/HUD_Shutdown repeat within one engine process (the client re-runs
+  its HUD cycle on map init). Only cvar/command registration and module
+  `onInit` stay process-scoped; `H_HUD_Init` re-arms everything HUD_Shutdown
+  released: the client detour (`installClientHooks`, idempotent through the
+  owned list plus `FindInlineHook`) and the post-chain replay
+  (`moduleRegistry().postInitAll()`, which rebuilds the destroyed concurrent
+  command chains and re-installs the six usermsg hooks).
+- `autofunc::init` and `signals::init` keep their command registration behind a
+  one-shot latch but replay persisted bindings and re-hook usermsg handlers on
+  every call; the re-hook helper ignores its own previous handler so the chain
+  never becomes recursive. Do not add a second unconditional `HOOK_MESSAGE`.
+- `CHAIN_ORIGINAL` tolerates a message the client did not register (null
+  predecessor); keep that guard when adding signal sources.
+- The effect assets under `assets/svencoop/abc/` are runtime dependencies of
+  the fx module and are part of both `install()` (deploy) and `dist`; adding a
+  new spr/mdl there needs no extra rule, but do not move assets out of that
+  tree without updating both packaging paths.
+- `events 1 <event> <cmd ...>` joins the remaining console tokens, so scripts
+  may contain spaces without quoting; quoted input still works.
+- CI pins the CMake download (version + SHA-256) and action SHAs, and does not
+  use a personal access token: keep it that way when editing the workflow.
