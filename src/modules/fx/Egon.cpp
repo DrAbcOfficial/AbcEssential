@@ -95,12 +95,18 @@ void shootEgonParticle() {
       burst->hitcallback = [](struct tempent_s *hit,
                               struct pmtrace_s *hitTrace) {
         if (hit->entity.curstate.iuser1 != 1) {
-          gEngfuncs.pEfxAPI->R_DecalShoot(
-              gEngfuncs.pEfxAPI->Draw_DecalIndex(
-                  gEngfuncs.pEfxAPI->Draw_DecalIndexFromName(
-                      const_cast<char *>("{smscorch2"))),
-              gEngfuncs.pEventAPI->EV_IndexFromTrace(hitTrace), 0,
-              hitTrace->endpos, 0);
+          // Both lookups can miss (-1); R_DecalShoot must not receive the
+          // resulting invalid decal/texture index.
+          const int decalIndex = gEngfuncs.pEfxAPI->Draw_DecalIndexFromName(
+              const_cast<char *>("{smscorch2"));
+          const int textureIndex =
+              decalIndex >= 0 ? gEngfuncs.pEfxAPI->Draw_DecalIndex(decalIndex)
+                              : -1;
+          const int entityIndex =
+              gEngfuncs.pEventAPI->EV_IndexFromTrace(hitTrace);
+          if (textureIndex >= 0 && entityIndex >= 0)
+            gEngfuncs.pEfxAPI->R_DecalShoot(textureIndex, entityIndex, 0,
+                                            hitTrace->endpos, 0);
           hit->entity.curstate.iuser1 = 1;
         }
       };
@@ -136,7 +142,7 @@ bool addEntity(int type, struct cl_entity_s *ent) {
       int endEntity = ent->curstate.skin;
       int entityType = ent->curstate.entityType;
       if (startEntity == 0 && endEntity > 4096 && entityType == 2 &&
-          !strncmp(Model->name, "sprites/xbeam1.spr", 19)) {
+          !std::strcmp(Model->name, "sprites/xbeam1.spr")) {
         int beamFlags = (ent->curstate.rendermode & 0xF0);
         int noise = ent->curstate.body;
         float scrollRate = ent->curstate.animtime;
@@ -158,7 +164,7 @@ bool addEntity(int type, struct cl_entity_s *ent) {
   } else if (type == ET_NORMAL) {
     // filter the vanilla egon spark sprites, the particle ball replaces them
     if (ent->curstate.modelindex > 0 &&
-        !strncmp(Model->name, "sprites/XSpark1.spr", 19) &&
+        !std::strcmp(Model->name, "sprites/XSpark1.spr") &&
         ent->curstate.entityType == 1 && ent->curstate.scale == 1.0f &&
         ent->curstate.rendermode == 3 && ent->curstate.renderamt == 255 &&
         ent->curstate.rendercolor.r == 255 &&
