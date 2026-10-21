@@ -99,29 +99,38 @@ void removeConcurrent(const char *target) {
 } // namespace
 
 void init() {
-  AutoJumpCvar =
-      abc::CREATE_CVAR("cl_autojump", "0", abc::FCVAR_VALUE, nullptr);
-  abc::ADD_COMMAND("+ducktap", []() { DucktapActive = true; });
-  abc::ADD_COMMAND("-ducktap", []() { DucktapActive = false; });
-  // Add concurrent cmd
-  abc::ADD_COMMAND("concurrent", []() {
-    size_t argc = gEngfuncs.Cmd_Argc();
-    if (argc < 3) {
-      abc::ConsoleWriteline(
-          "concurrent [target command] [concurrent command]\n");
-      return;
-    }
-    setConcurrent(gEngfuncs.Cmd_Argv(1), gEngfuncs.Cmd_Argv(2));
-  });
-  abc::ADD_COMMAND("removeconcurrent", []() {
-    size_t argc = gEngfuncs.Cmd_Argc();
-    if (argc < 2) {
-      abc::ConsoleWriteline("removeconcurrent [target command]\n");
-      return;
-    }
-    removeConcurrent(gEngfuncs.Cmd_Argv(1));
-  });
-  // Replay concurrent bindings from config (base HUD commands exist by now)
+  // Registration is per process: the engine keeps cvars and commands across
+  // HUD_Shutdown cycles, so re-registering would duplicate them. The
+  // concurrent replay below IS per cycle: shutdown() destroys the chained
+  // command objects (their destructor restores the target command) and the
+  // rebuilt chain must exist again before the next session uses it.
+  static bool Registered = false;
+  if (!Registered) {
+    Registered = true;
+    AutoJumpCvar =
+        abc::CREATE_CVAR("cl_autojump", "0", abc::FCVAR_VALUE, nullptr);
+    abc::ADD_COMMAND("+ducktap", []() { DucktapActive = true; });
+    abc::ADD_COMMAND("-ducktap", []() { DucktapActive = false; });
+    // Add concurrent cmd
+    abc::ADD_COMMAND("concurrent", []() {
+      size_t argc = gEngfuncs.Cmd_Argc();
+      if (argc < 3) {
+        abc::ConsoleWriteline(
+            "concurrent [target command] [concurrent command]\n");
+        return;
+      }
+      setConcurrent(gEngfuncs.Cmd_Argv(1), gEngfuncs.Cmd_Argv(2));
+    });
+    abc::ADD_COMMAND("removeconcurrent", []() {
+      size_t argc = gEngfuncs.Cmd_Argc();
+      if (argc < 2) {
+        abc::ConsoleWriteline("removeconcurrent [target command]\n");
+        return;
+      }
+      removeConcurrent(gEngfuncs.Cmd_Argv(1));
+    });
+  }
+  // Replay concurrent bindings from config (base HUD commands exist by now).
   abcess::AbcEssentialConfig *config = abcess::config();
   for (auto iter = config->ConcurrentCmds.begin();
        iter != config->ConcurrentCmds.end(); iter++) {

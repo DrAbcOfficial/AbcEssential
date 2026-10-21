@@ -90,21 +90,26 @@ static void registerGlobalCvars() {
 }
 
 static void H_HUD_Init() {
+  // HUD_Init/HUD_Shutdown can repeat within one engine process (the client is
+  // reloaded on a map change / reconnect in some SvEngine paths). Cvars and
+  // commands survive that loop, so their registration stays process-scoped;
+  // everything HUD_Shutdown tears down (the client detour, the chained
+  // concurrent commands, the usermsg predecessors) is re-armed here.
   static bool Initialized = false;
-  const bool first = !Initialized;
-  if (first) {
+  if (!Initialized) {
     Initialized = true;
     // cvar/command registration happens at HUD_Init time (client ready),
     // the proven point from ABCEnchance (08 §4.9).
     registerGlobalCvars();
     abcess::moduleRegistry().initAll();
   }
+  installClientHooks();
   gExportfuncs.HUD_Init();
   // post-chain init: bindings that reference base-HUD commands (AutoFunc
   // replays persisted concurrent/event bindings after the base HUD has
-  // registered its own commands - old code ordered it the same way).
-  if (first)
-    abcess::moduleRegistry().postInitAll();
+  // registered its own commands - old code ordered it the same way). Runs
+  // every cycle because shutdown() destroyed the previous chain.
+  abcess::moduleRegistry().postInitAll();
 }
 
 static int H_HUD_VidInit() {
@@ -231,6 +236,17 @@ void fillClientAddress() {
 }
 
 void installClientHooks() {
+  // Idempotent: LoadClient and every HUD_Init re-arm call this. Detours does
+  // not chain a second attach (it copies the first jmp into the trampoline and
+  // the first call recurses forever), so skip when this plugin already owns a
+  // hook, or when MetaHook reports the target hooked by a previous cycle whose
+  // UnHook did not run.
+  if (!ClientHookList.empty())
+    return;
+  if (g_pMetaHookAPI->FindInlineHook &&
+      g_pMetaHookAPI->FindInlineHook(
+          (void *)Hooks.CClient_SoundEngine_Initialize, nullptr))
+    return;
   // CClient_SoundEngine_Initialize detour captures the FMOD wrapper "this";
   // PlayFMODSound stays unhooked (the old detour only hosted the NetEase
   // music branch, which is not migrated) and is called directly.

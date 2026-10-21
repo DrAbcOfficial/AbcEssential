@@ -51,7 +51,10 @@ void replacePlaceholder(std::string &text, const char *key, const char *value) {
 #define DEFINE_SIGNAL_HOOK(name)                                               \
   static pfnUserMsgHook original_##name;                                       \
   static int __MsgFunc_##name(const char *pszName, int iSize, void *pbuf) /**/
-#define CHAIN_ORIGINAL(name) original_##name(pszName, iSize, pbuf)
+// A message the client did not register has no predecessor; still consume
+// the (absent) call instead of dereferencing null.
+#define CHAIN_ORIGINAL(name)                                                   \
+  (original_##name ? original_##name(pszName, iSize, pbuf) : 0)
 
 DEFINE_SIGNAL_HOOK(WeaponList) {
   abc::MsgReader msg(pbuf, iSize);
@@ -134,65 +137,83 @@ DEFINE_SIGNAL_HOOK(FlashBat) {
   return CHAIN_ORIGINAL(FlashBat);
 }
 
+// HookUserMsg returns the previous handler. A second install (a new HUD_Init
+// cycle) returns our own hook; the real predecessor is already stored, so
+// only a foreign predecessor is adopted. This keeps the chain correct when
+// the engine rebuilt the client's usermsg table in between.
+void installHook(const char *name, pfnUserMsgHook hook,
+                 pfnUserMsgHook &original) {
+  pfnUserMsgHook previous = g_pMetaHookAPI->HookUserMsg(name, hook);
+  if (previous && previous != hook)
+    original = previous;
+}
+
 void registerUserMsgHooks() {
-  // HOOK_MESSAGE(x) -> g_pMetaHookAPI->HookUserMsg(#x, __MsgFunc_x)
-  original_WeaponList = HOOK_MESSAGE(WeaponList);
-  original_CurWeapon = HOOK_MESSAGE(CurWeapon);
-  original_Damage = HOOK_MESSAGE(Damage);
-  original_Battery = HOOK_MESSAGE(Battery);
-  original_Health = HOOK_MESSAGE(Health);
-  original_FlashBat = HOOK_MESSAGE(FlashBat);
+  installHook("WeaponList", __MsgFunc_WeaponList, original_WeaponList);
+  installHook("CurWeapon", __MsgFunc_CurWeapon, original_CurWeapon);
+  installHook("Damage", __MsgFunc_Damage, original_Damage);
+  installHook("Battery", __MsgFunc_Battery, original_Battery);
+  installHook("Health", __MsgFunc_Health, original_Health);
+  installHook("FlashBat", __MsgFunc_FlashBat, original_FlashBat);
 }
 #pragma endregion
 
 } // namespace
 
 void init() {
-  // events command
-  abc::ADD_COMMAND("events", []() {
-    static auto usage = []() {
-      abc::ConsoleWriteline("events [operate] [event] [cmd]\n");
-      abc::ConsoleWriteline("operate: 0 = delete, 1 = set\n");
-      abc::ConsoleWriteline("available events:\n");
-      for (std::string_view name : kEventNames) {
-        std::string line = "    [";
-        line += name;
-        line += "]\n";
-        abc::ConsoleWriteline(line.c_str());
-      }
-    };
-    size_t argc = gEngfuncs.Cmd_Argc();
-    if (argc < 3) {
-      usage();
-      return;
-    }
-    const char *evt = gEngfuncs.Cmd_Argv(2);
-    if (!evt || !isEventName(evt)) {
-      usage();
-      return;
-    }
-    const auto operation = parseOperation(gEngfuncs.Cmd_Argv(1));
-    if (!operation) {
-      usage();
-      return;
-    }
-    switch (*operation) {
-    case 0:
-      EventCmds.erase(evt);
-      break;
-    case 1: {
-      if (argc < 4) {
+  // The events command is process-scoped (the engine keeps commands across
+  // HUD_Shutdown cycles). The binding replay and the usermsg hook re-arm run
+  // every cycle: shutdown() persists the bindings and the client may have
+  // rebuilt its usermsg table since the last install.
+  static bool Registered = false;
+  if (!Registered) {
+    Registered = true;
+    // events command
+    abc::ADD_COMMAND("events", []() {
+      static auto usage = []() {
+        abc::ConsoleWriteline("events [operate] [event] [cmd]\n");
+        abc::ConsoleWriteline("operate: 0 = delete, 1 = set\n");
+        abc::ConsoleWriteline("available events:\n");
+        for (std::string_view name : kEventNames) {
+          std::string line = "    [";
+          line += name;
+          line += "]\n";
+          abc::ConsoleWriteline(line.c_str());
+        }
+      };
+      size_t argc = gEngfuncs.Cmd_Argc();
+      if (argc < 3) {
         usage();
         return;
       }
-      EventCmds[evt] = gEngfuncs.Cmd_Argv(3);
-      break;
-    }
-    default:
-      usage();
-      break;
-    }
-  });
+      const char *evt = gEngfuncs.Cmd_Argv(2);
+      if (!evt || !isEventName(evt)) {
+        usage();
+        return;
+      }
+      const auto operation = parseOperation(gEngfuncs.Cmd_Argv(1));
+      if (!operation) {
+        usage();
+        return;
+      }
+      switch (*operation) {
+      case 0:
+        EventCmds.erase(evt);
+        break;
+      case 1: {
+        if (argc < 4) {
+          usage();
+          return;
+        }
+        EventCmds[evt] = gEngfuncs.Cmd_Argv(3);
+        break;
+      }
+      default:
+        usage();
+        break;
+      }
+    });
+  }
   // replay persisted event bindings
   EventCmds = abcess::config()->EventsCmds;
 
