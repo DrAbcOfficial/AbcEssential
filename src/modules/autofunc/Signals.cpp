@@ -171,7 +171,8 @@ void init() {
     // events command
     abc::ADD_COMMAND("events", []() {
       static auto usage = []() {
-        abc::ConsoleWriteline("events [operate] [event] [cmd]\n");
+        abc::ConsoleWriteline(
+            "events [operate] [event] [cmd ...] (cmd may contain spaces)\n");
         abc::ConsoleWriteline("operate: 0 = delete, 1 = set\n");
         abc::ConsoleWriteline("available events:\n");
         for (std::string_view name : kEventNames) {
@@ -205,7 +206,16 @@ void init() {
           usage();
           return;
         }
-        EventCmds[evt] = gEngfuncs.Cmd_Argv(3);
+        // The script is the rest of the line: join every remaining token so
+        // "events 1 health say hello" keeps "say hello" intact instead of
+        // silently persisting "say". A quoted argument still arrives as one
+        // token and therefore also works unchanged.
+        std::string script = gEngfuncs.Cmd_Argv(3);
+        for (size_t i = 4; i < argc; i++) {
+          script += ' ';
+          script += gEngfuncs.Cmd_Argv(i);
+        }
+        EventCmds[evt] = std::move(script);
         break;
       }
       default:
