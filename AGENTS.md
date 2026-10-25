@@ -11,6 +11,17 @@ Guidance for AI/automation collaborators working in this repository. Read `READM
 - AbcCore is managed by the aggregate `ABCEnchance` repository and consumed through `ABC_CORE_DIR`; do not add a `thirdparty/AbcCore` submodule back to AbcEssential.
 - Keep the plugin free of rendering dependencies: no IMetaRenderer and no hard dependency on Renderer.dll.
 
+## README
+
+- The README is the single public document and is written for end users.
+- Keep it short: features, installation and user-facing commands or settings
+  only. Do not document architecture, module layout, ABI or interface
+  contracts, design conventions or internal implementation, and never add
+  parenthesised technical remarks.
+- Do not describe changelogs, TODOs or FIXMEs.
+- The only technical content is how to build the dist package, including its
+  prerequisites.
+
 ## Build
 
 Win32 x86 only / C++20 / dynamic CRT (/MD). AbcCore is consumed as
