@@ -32,6 +32,7 @@ cvar_t *ModelLagCvar;
 cvar_t *ModelLagAutoStopCvar;
 cvar_t *ModelLagValueCvar;
 cvar_t *ModelSlideCvar;
+cvar_t *ModelSlideAutoStopCvar;
 cvar_t *ModelSlideAngleCvar;
 cvar_t *ModelSlideLengthCvar;
 cvar_t *ModelSlideHeightCvar;
@@ -39,14 +40,20 @@ cvar_t *ModelSlideHeightCvar;
 cvar_t *DefaultFovCvar = nullptr; // engine cvar, grabbed at VidInit
 float CurrentFov = 90.0f;         // current fov, fed from HUD_UpdateClientData
 
+// True while the fov in use differs from default_fov, i.e. while zoomed or
+// aiming down iron sights.
+bool fovIsCustom() {
+  return DefaultFovCvar &&
+         CurrentFov != std::clamp<float>(DefaultFovCvar->value, 10.0f, 110.0f);
+}
+
 void calcViewModelLag(ref_params_t *pparams, vec3_t origin, vec3_t angles,
                       const vec3_t originalAngles) {
   if (ModelLagCvar->value <= 0)
     return;
   // autostop: hold the viewmodel still while the fov differs from default
   // (zoom)
-  if (ModelLagAutoStopCvar->value > 0 && DefaultFovCvar &&
-      CurrentFov != std::clamp<float>(DefaultFovCvar->value, 10.0f, 110.0f))
+  if (ModelLagAutoStopCvar->value > 0 && fovIsCustom())
     return;
   static vec3_t LastFacing = {0, 0, 0};
   vec3_t OriginalOrigin, OriginalAngles;
@@ -107,6 +114,10 @@ void calcViewModelLag(ref_params_t *pparams, vec3_t origin, vec3_t angles,
 void calcModelSlide(ref_params_t *pparams) {
   if (ModelSlideCvar->value <= 0)
     return;
+  // autostop: keep the slide out of zoomed aiming, the iron sights lose their
+  // sight picture once the viewmodel slides away
+  if (ModelSlideAutoStopCvar->value > 0 && fovIsCustom())
+    return;
   cl_entity_t *local = gEngfuncs.GetLocalPlayer();
   pmtrace_t tr;
   vec3_t vecEnd;
@@ -143,6 +154,8 @@ void init() {
 
   ModelSlideCvar =
       abc::CREATE_CVAR("cl_modelslide", "0", abc::FCVAR_VALUE, nullptr);
+  ModelSlideAutoStopCvar = abc::CREATE_CVAR("cl_modelslide_autostop", "1",
+                                            abc::FCVAR_VALUE, nullptr);
   ModelSlideAngleCvar =
       abc::CREATE_CVAR("cl_modelslide_angle", "24", abc::FCVAR_VALUE, nullptr);
   ModelSlideLengthCvar =

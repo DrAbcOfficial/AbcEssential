@@ -40,7 +40,7 @@ AbcCore.dll is required and must be installed under `svencoop/metahook/dlls/AbcC
 | `+ducktap` / `-ducktap` | Automatic crouch-jump. |
 | `cl_autojump` | Automatic bunny-hop. |
 | `cl_modellag` / `cl_modellag_autostop` / `cl_modellag_value` | Weapon sway. |
-| `cl_modelslide` / `cl_modelslide_angle` / `cl_modelslide_length` / `cl_modelslide_height` | Weapon slide. |
+| `cl_modelslide` / `cl_modelslide_autostop` / `cl_modelslide_angle` / `cl_modelslide_length` / `cl_modelslide_height` | Weapon slide. |
 | `cam_idealheight` / `cam_idealright` | Third-person view offset. |
 | `abc_bloodefx` / `abc_bloodsprite_num` / `abc_bloodsprite_speed` | Blood effects. |
 | `abc_shellefx` | Shell casing effects. |
