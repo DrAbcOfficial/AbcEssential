@@ -32,6 +32,20 @@ constexpr float kGaussWaveLength = 48.0f;
 constexpr float kGaussLaserPrimaryWidth = 2.0f;
 constexpr float kGaussLaserSecondaryWidth = 4.0f;
 
+// svencoop_sdk cl_dll/ev_beams.cpp brackets every trace with the shared
+// prediction/physent state and makes the other players solid before the ray
+// runs; the engine's event trace otherwise misses them and leaks the hull
+// selection into the rest of the frame.
+void traceGauss(int playerIndex, float *start, float *end, int flags,
+                int ignoreEntity, pmtrace_t *trace) {
+  gEngfuncs.pEventAPI->EV_SetUpPlayerPrediction(false, true);
+  gEngfuncs.pEventAPI->EV_PushPMStates();
+  gEngfuncs.pEventAPI->EV_SetSolidPlayers(playerIndex - 1);
+  gEngfuncs.pEventAPI->EV_SetTraceHull(2);
+  gEngfuncs.pEventAPI->EV_PlayerTrace(start, end, flags, ignoreEntity, trace);
+  gEngfuncs.pEventAPI->EV_PopPMStates();
+}
+
 void createGaussLoophole(pmtrace_t *trace) {
   model_t *Model = Precached.GaussLoophole >= 0
                        ? gEngfuncs.hudGetModelByIndex(Precached.GaussLoophole)
@@ -53,37 +67,54 @@ void createGaussLoophole(pmtrace_t *trace) {
   };
 }
 
-void stopPreviousGaussSound() {
-  int viewModelIndex = gEngfuncs.GetViewModel()->index;
-  // Make sure we don't have a gauss spin event in the queue for this guy
-  gEngfuncs.pEventAPI->EV_KillEvents(viewModelIndex, "events/gaussspin.sc");
+void stopPreviousGaussSound(cl_entity_t *local) {
+  if (!local)
+    return;
+  // svencoop_sdk ev_beams.cpp stops the spin event and the weapon channel on
+  // the player entity index, not on the view model entity.
+  const int playerIndex = local->index;
+  gEngfuncs.pEventAPI->EV_KillEvents(playerIndex, "events/gaussspin.sc");
+  if (!hooks::Hooks.CClient_SoundEngine_PlayFMODSound ||
+      !hooks::Hooks.ClientSoundEngine)
+    return;
   // SND_STOP 32
   hooks::Hooks.CClient_SoundEngine_PlayFMODSound(
-      hooks::Hooks.ClientSoundEngine, 0, 32, viewModelIndex, 0, CHAN_WEAPON,
+      hooks::Hooks.ClientSoundEngine, 0, 32, playerIndex, 0, CHAN_WEAPON,
       "ambience/pulsemachine.wav", 0.0f, 0.0f, 0, 0, -1, 0.0f);
 }
 
 } // namespace
 
 // 高斯主弹道:穿透、反射、能量衰减,与旧版一致
-static void gaussFire(float damage, bool secondary) {
+static void gaussFire(float damage, bool primaryFire,
+                      const float *eventOrigin, const float *eventAngles) {
   pmtrace_t trace, beamTrace;
   vec3_t forward, viewAngles;
   vec3_t src, dest, dir, viewOfs;
   vec3_t normal, reflect, random, randomSrc, segment;
   cl_entity_t *local = gEngfuncs.GetLocalPlayer();
+  if (!local)
+    return;
   int entIgnore = local->index;
   bool hasPunched = false;
   bool firstBeam = true;
   int maxHits = 10;
 
-  gEngfuncs.GetViewAngles(viewAngles);
+  // svencoop_sdk ev_beams.cpp traces with the event's recorded origin and
+  // angles; the current camera may already have moved from a pending usercmd.
+  if (eventAngles)
+    math::VectorCopy(eventAngles, viewAngles);
+  else
+    gEngfuncs.GetViewAngles(viewAngles);
+  if (eventOrigin)
+    math::VectorCopy(eventOrigin, src);
+  else
+    math::VectorCopy(local->curstate.origin, src);
 
   math::AngleVectors(viewAngles, forward, nullptr, nullptr);
   math::VectorCopy(forward, dir);
   math::VectorNormalize(dir);
 
-  math::VectorCopy(local->curstate.origin, src);
   gEngfuncs.pEventAPI->EV_LocalPlayerViewheight(viewOfs);
   math::VectorAdd(src, viewOfs, src);
   math::VectorMultiply(forward, 8192);
@@ -93,9 +124,7 @@ static void gaussFire(float damage, bool secondary) {
     // 第一发射线跟踪
     maxHits--;
     // 从枪口开始追踪
-    gEngfuncs.pEventAPI->EV_SetTraceHull(2);
-    gEngfuncs.pEventAPI->EV_PlayerTrace(src, dest, PM_STUDIO_BOX, entIgnore,
-                                        &trace);
+    traceGauss(local->index, src, dest, PM_STUDIO_BOX, entIgnore, &trace);
     // 高斯直线
     if (trace.allsolid != 0)
       break;
@@ -104,18 +133,22 @@ static void gaussFire(float damage, bool secondary) {
       break;
     // 初始光束
     if (firstBeam) {
-      local->curstate.effects |= EF_MUZZLEFLASH;
+      // EV_MuzzleFlash flags the view model entity, not the player model.
+      if (cl_entity_t *view = gEngfuncs.GetViewModel())
+        view->curstate.effects |= EF_MUZZLEFLASH;
       firstBeam = false;
       gEngfuncs.pEfxAPI->R_BeamEntPoint(
           local->index + (gExportfuncs.CL_IsThirdPerson() ? 0 : 4096),
           trace.endpos, Precached.GaussBeam, 0.2f,
-          secondary ? kGaussLaserPrimaryWidth : kGaussLaserSecondaryWidth, 0, 1,
-          0, 0, 0, 1, secondary ? 0.8f : 1.0f, secondary ? 0.0f : 1.0f);
+          primaryFire ? kGaussLaserPrimaryWidth : kGaussLaserSecondaryWidth, 0,
+          1, 0, 0, 0, 1, primaryFire ? 0.8f : 1.0f,
+          primaryFire ? 0.0f : 1.0f);
     } else
       gEngfuncs.pEfxAPI->R_BeamPoints(
           src, trace.endpos, Precached.GaussBeam, 0.2f,
-          secondary ? kGaussLaserPrimaryWidth : kGaussLaserSecondaryWidth, 0, 1,
-          0, 0, 0, 1, secondary ? 0.8f : 1.0f, secondary ? 0.0f : 1.0f);
+          primaryFire ? kGaussLaserPrimaryWidth : kGaussLaserSecondaryWidth, 0,
+          1, 0, 0, 0, 1, primaryFire ? 0.8f : 1.0f,
+          primaryFire ? 0.0f : 1.0f);
     cl_entity_t *hit = gEngfuncs.GetEntityByIndex(
         gEngfuncs.pEventAPI->EV_IndexFromTrace(&trace));
     // 命中世界刷子
@@ -134,9 +167,13 @@ static void gaussFire(float damage, bool secondary) {
         reflect[0] = 2.0f * normal[0] * incidence + dir[0];
         reflect[1] = 2.0f * normal[1] * incidence + dir[1];
         reflect[2] = 2.0f * normal[2] * incidence + dir[2];
-        // 取得新的反射方向作为后续射线路径
+        // 取得新的反射方向作为后续射线路径; svencoop_sdk starts 8 units
+        // off the surface so the next trace does not immediately re-hit it.
         math::VectorCopy(reflect, dir);
         math::VectorCopy(trace.endpos, src);
+        src[0] += dir[0] * 8.0f;
+        src[1] += dir[1] * 8.0f;
+        src[2] += dir[2] * 8.0f;
         dest[0] = src[0] + dir[0] * 8192.0f;
         dest[1] = src[1] + dir[1] * 8192.0f;
         dest[2] = src[2] + dir[2] * 8192.0f;
@@ -160,7 +197,7 @@ static void gaussFire(float damage, bool secondary) {
                    dir[2] * math::RANDOM_FLOAT(-3, 3));
           gEngfuncs.pEfxAPI->R_BeamPoints(
               src, random, Precached.GaussWaveBeam, 0.2f,
-              secondary ? kGaussLaserPrimaryWidth : kGaussLaserSecondaryWidth,
+              primaryFire ? kGaussLaserPrimaryWidth : kGaussLaserSecondaryWidth,
               0, 1, 0, 0, 0, 1, 0.8f, 0);
         }
         // lose energy
@@ -173,21 +210,18 @@ static void gaussFire(float damage, bool secondary) {
           break;
         hasPunched = true;
         // 右键没有直射光束,尝试从命中点向墙体背面穿透
-        if (!secondary) {
+        if (!primaryFire) {
           src[0] = trace.endpos[0] + dir[0] * 8;
           src[1] = trace.endpos[1] + dir[1] * 8;
           src[2] = trace.endpos[2] + dir[2] * 8;
           // 从命中点向前 8 单位再穿一次,以命中背面为终点
-          gEngfuncs.pEventAPI->EV_SetTraceHull(2);
-          gEngfuncs.pEventAPI->EV_PlayerTrace(src, dest, PM_STUDIO_BOX,
-                                              entIgnore, &beamTrace);
+          traceGauss(local->index, src, dest, PM_STUDIO_BOX, entIgnore,
+                     &beamTrace);
           // 未触发穿墙光束
           if (beamTrace.allsolid == 0) {
             // 从第一次穿透点为起点,向回穿到入射面,得到墙体厚度
-            gEngfuncs.pEventAPI->EV_SetTraceHull(2);
-            gEngfuncs.pEventAPI->EV_PlayerTrace(beamTrace.endpos, trace.endpos,
-                                                PM_STUDIO_BOX, entIgnore,
-                                                &beamTrace);
+            traceGauss(local->index, beamTrace.endpos, trace.endpos,
+                       PM_STUDIO_BOX, entIgnore, &beamTrace);
             // 光束长度即厚度
             math::VectorSubtract(beamTrace.endpos, trace.endpos, segment);
             float thickness = (float)math::VectorLength(segment);
@@ -201,11 +235,9 @@ static void gaussFire(float damage, bool secondary) {
               random[0] = randomSrc[0] + dir[0] * math::RANDOM_FLOAT(-512, 512);
               random[1] = randomSrc[1] + dir[1] * math::RANDOM_FLOAT(-512, 512);
               random[2] = randomSrc[2] + dir[2] * math::RANDOM_FLOAT(-512, 512);
-              gEngfuncs.pEventAPI->EV_SetTraceHull(2);
               pmtrace_t DecorationTrace{};
-              gEngfuncs.pEventAPI->EV_PlayerTrace(randomSrc, random,
-                                                  PM_STUDIO_IGNORE, entIgnore,
-                                                  &DecorationTrace);
+              traceGauss(local->index, randomSrc, random, PM_STUDIO_IGNORE,
+                         entIgnore, &DecorationTrace);
               if (DecorationTrace.ent == 0)
                 createGaussLoophole(&DecorationTrace);
             }
@@ -229,9 +261,10 @@ static void gaussFire(float damage, bool secondary) {
         }
       }
     } else {
-      // 命中实体:推进到命中点后继续穿透
+      // 命中实体:推进到命中点后继续穿透. EV_IndexFromTrace returns the
+      // entity index EV_PlayerTrace expects; trace.ent is the physent index.
       math::VectorAdd(trace.endpos, dir, src);
-      entIgnore = trace.ent;
+      entIgnore = gEngfuncs.pEventAPI->EV_IndexFromTrace(&trace);
     }
   }
 }
@@ -243,28 +276,29 @@ bool playbackEvent(int flags, const struct edict_s *pInvoker,
   (void)flags;
   (void)pInvoker;
   (void)delay;
-  (void)origin;
-  (void)angles;
   (void)fparam2;
   (void)iparam1;
   (void)iparam2;
   (void)bparam2;
   // 高斯主开火 flag 3, index 12;高斯转轮 flag1, index 13
-  if (eventindex == 12 && GaussEfxCvar && GaussEfxCvar->value > 0 &&
-      Precached.GaussBeam >= 0 && Precached.GaussWaveBeam >= 0 &&
-      gEngfuncs.GetLocalPlayer() && gEngfuncs.GetViewModel()) {
-    stopPreviousGaussSound();
-    gEngfuncs.pEventAPI->EV_WeaponAnimation(6, 0);
-    cl_entity_t *view = gEngfuncs.GetViewModel();
+  cl_entity_t *local = gEngfuncs.GetLocalPlayer();
+  if (eventindex != 12 || !GaussEfxCvar || GaussEfxCvar->value <= 0 ||
+      Precached.GaussBeam < 0 || Precached.GaussWaveBeam < 0 || !local)
+    return false;
+  stopPreviousGaussSound(local);
+  gEngfuncs.pEventAPI->EV_WeaponAnimation(6, 2);
+  if (hooks::Hooks.CClient_SoundEngine_PlayFMODSound &&
+      hooks::Hooks.ClientSoundEngine) {
     hooks::Hooks.CClient_SoundEngine_PlayFMODSound(
-        hooks::Hooks.ClientSoundEngine, 0, 0, view->index, view->origin,
-        CHAN_WEAPON, "weapons/gauss2.wav", 1.0f, 1.0f, 0, 100, -1, 0.0f);
-    hooks::Hooks.V_PunchAxis(0, -1.5f);
-    // f1 伤害;b1 是否为副开火
-    gaussFire(fparam1, bparam1 != 0);
-    return true;
+        hooks::Hooks.ClientSoundEngine, 0, 0, local->index,
+        origin ? origin : local->origin, CHAN_WEAPON, "weapons/gauss2.wav",
+        1.0f, 1.0f, 0, 100, -1, 0.0f);
   }
-  return false;
+  if (hooks::Hooks.V_PunchAxis)
+    hooks::Hooks.V_PunchAxis(0, -2.0f);
+  // f1 伤害;b1 是否为主开火（SDK ev_beams.cpp 的 primaryfire）
+  gaussFire(fparam1, bparam1 != 0, origin, angles);
+  return true;
 }
 
 } // namespace fx
