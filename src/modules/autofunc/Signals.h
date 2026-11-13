@@ -31,8 +31,9 @@ void shutdown();
 // Map transition / HUD_VidInit: weapon ownership starts from scratch.
 void resetWeapons();
 // HUD_TxferPredictionData feed: fires add_weapon/drop_weapon on ownership
-// changes, names resolved from WeaponList messages.
-void onTxferPredictionData(const struct weapon_data_s *wd);
+// changes from the server-acknowledged pwd array, names resolved from
+// WeaponList messages.
+void onTxferPredictionData(const struct weapon_data_s *pwd);
 
 // Replaces {param1}..{param4} in the registered command string and runs it.
 void triggerEvent(const char *eventname, const char *param1 = nullptr,

@@ -63,6 +63,13 @@ if(ABC_GAME_DIR)
         COMMENT "Deploying AbcEssential.dll and its assets to ${ABC_GAME_DIR}")
 endif()
 
+# --- Offline tests -----------------------------------------------------------
+option(ABCESSENTIAL_BUILD_TESTS "Build the offline unit tests" OFF)
+if(ABCESSENTIAL_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
 # --- Packaging ---------------------------------------------------------------
 # `cmake --build <build-dir> --config Release --target dist` produces
 # AbcEssential-<version>.zip with the game root at the archive root, so it can

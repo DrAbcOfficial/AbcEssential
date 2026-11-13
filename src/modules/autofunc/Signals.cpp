@@ -7,6 +7,7 @@
 // resolved from WeaponList messages.
 
 #include "Signals.h"
+#include "PredictionWeapons.h"
 #include "SignalValidation.h"
 
 #include <algorithm>
@@ -31,7 +32,8 @@ namespace signals {
 
 namespace {
 
-constexpr int kMaxWeapons = 64; // weapon_data_t weapondata[64] (entity_state.h)
+// svencoop_sdk/common/entity_state.h: local_state_t::weapondata[256].
+constexpr int kMaxWeapons = kPredictionWeaponCount;
 
 std::map<std::string, std::string> EventCmds;
 std::array<std::string, kMaxWeapons> WeaponNames;
@@ -69,7 +71,7 @@ DEFINE_SIGNAL_HOOK(WeaponList) {
   msg.readChar(); // iSlotPos
   int weaponId = msg.readShort();
   // iFlags omitted: we only need id -> name
-  if (!msg.ok() || weaponId <= 0 || weaponId >= kMaxWeapons)
+  if (!msg.ok() || !validWeaponId(weaponId))
     return CHAIN_ORIGINAL(WeaponList);
   if (!isWeaponIdentifier(name)) {
     WeaponNames[weaponId].clear();
@@ -265,9 +267,13 @@ void resetWeapons() {
   WeaponOwned.fill(false);
 }
 
-void onTxferPredictionData(const weapon_data_s *wd) {
-  for (int i = 1; i < kMaxWeapons; i++) {
-    bool owned = wd[i].m_iId > 0;
+void onTxferPredictionData(const weapon_data_s *pwd) {
+  if (!pwd)
+    return;
+  // pwd is the server-acknowledged weapon array (the SDK copies it into wd
+  // before the native HUD consumes it); wd is only the client prediction.
+  for (int i = 1; i < kPredictionWeaponCount; i++) {
+    bool owned = pwd[i].m_iId > 0;
     if (owned == WeaponOwned[i])
       continue;
     WeaponOwned[i] = owned;

@@ -157,7 +157,10 @@ static void H_HUD_TxferPredictionData(struct entity_state_s *ps,
                                       const struct clientdata_s *ppcd,
                                       struct weapon_data_s *wd,
                                       const struct weapon_data_s *pwd) {
-  signals::onTxferPredictionData(wd);
+  // The SDK copies pwd into wd before the native HUD consumes it, so pwd is
+  // the acknowledged ownership state; reading the pre-copy wd would report
+  // client-side prediction changes.
+  signals::onTxferPredictionData(pwd);
   gExportfuncs.HUD_TxferPredictionData(ps, pps, pcd, ppcd, wd, pwd);
 }
 
