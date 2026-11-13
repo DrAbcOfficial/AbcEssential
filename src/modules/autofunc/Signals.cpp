@@ -92,8 +92,10 @@ DEFINE_SIGNAL_HOOK(CurWeapon) {
   msg.readLong(); // iClip2
   if (!msg.ok())
     return CHAIN_ORIGINAL(CurWeapon);
-  if (state <= 0 && weaponId <= 0)
-    triggerEvent(kEventDeath);
+  // Death is reported by DeathMsg; CurWeapon id -1 also marks a holster,
+  // observer transition or an empty weapon slot, so it must not fire death.
+  (void)state;
+  (void)weaponId;
   return CHAIN_ORIGINAL(CurWeapon);
 }
 
@@ -141,6 +143,21 @@ DEFINE_SIGNAL_HOOK(FlashBat) {
   return CHAIN_ORIGINAL(FlashBat);
 }
 
+// svencoop_sdk cl_dll/death.cpp: byte killer, byte victim, string weapon.
+// This is the authoritative death notification; CurWeapon id -1 is also sent
+// when a weapon is holstered or the player enters observer mode.
+DEFINE_SIGNAL_HOOK(DeathMsg) {
+  abc::MsgReader msg(pbuf, iSize);
+  const int killer = msg.readByte();
+  const int victim = msg.readByte();
+  const std::string weapon = msg.readString();
+  if (!msg.ok())
+    return CHAIN_ORIGINAL(DeathMsg);
+  triggerEvent(kEventDeath, std::to_string(killer).c_str(),
+               std::to_string(victim).c_str(), weapon.c_str());
+  return CHAIN_ORIGINAL(DeathMsg);
+}
+
 // HookUserMsg returns the previous handler. A refresh after a client reload
 // may report our own hook back; the real predecessor is already stored, so
 // only a foreign predecessor is adopted.
@@ -167,6 +184,7 @@ void registerUserMsgHooks() {
   installHook("Battery", __MsgFunc_Battery, original_Battery);
   installHook("Health", __MsgFunc_Health, original_Health);
   installHook("FlashBat", __MsgFunc_FlashBat, original_FlashBat);
+  installHook("DeathMsg", __MsgFunc_DeathMsg, original_DeathMsg);
 }
 #pragma endregion
 

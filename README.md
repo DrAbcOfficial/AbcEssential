@@ -48,7 +48,7 @@ AbcCore.dll is required and must be installed under `svencoop/metahook/dlls/AbcC
 | `abc_egonefx` | Egon particle ball. |
 | `abc_version` | Show the plugin version. |
 
-Supported events for `events`: `death`, `damage`, `health`, `battery`, `flash_battery`, `add_weapon` and `drop_weapon`.
+Supported events for `events`: `death`, `damage`, `health`, `battery`, `flash_battery`, `add_weapon` and `drop_weapon`. The `death` event receives the killer and victim entity numbers and the weapon name as `{param1}`, `{param2}` and `{param3}`.
 
 ## Build the dist package
 

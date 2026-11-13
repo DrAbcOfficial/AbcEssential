@@ -69,7 +69,13 @@ void shootEgonParticle() {
   ball->entity.curstate.rendercolor = EgonParticleColor;
   ball->entity.curstate.rendermode = kRenderTransAdd;
   ball->entity.curstate.frame = 0;
-  ball->entity.curstate.framerate = 10.0f * ballModel->numframes; // 1s
+  // One full sprite cycle per second: the engine advances frame by
+  // framerate * frametime, so framerate must be the frame count (the same
+  // rule the blood sprite fix uses).
+  const float frameRate = ballModel->numframes > 0
+                              ? static_cast<float>(ballModel->numframes)
+                              : 1.0f;
+  ball->entity.curstate.framerate = frameRate;
   ball->callback = [](struct tempent_s *ent, float /*frametime*/,
                       float currenttime) {
     if (currenttime >= ent->entity.curstate.fuser1) {

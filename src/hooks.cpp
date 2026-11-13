@@ -198,28 +198,44 @@ void fillEngineAddress() {
           abc::ResolveGameSymbol(abc::g_dwEngineBase, "engine",
                                  "CL_GetModelByIndex",
                                  MH_GAMESYMBOL_KIND_FUNCTION));
+  if (!Hooks.R_NewMap)
+    abc::ConsoleWarn(
+        "[AbcEssential] R_NewMap is missing from the gamedata; per-map "
+        "effect precache is disabled\n");
+  if (!Hooks.CL_GetModelByIndex)
+    abc::ConsoleWarn(
+        "[AbcEssential] CL_GetModelByIndex is missing from the gamedata; "
+        "effect precache will not reach the renderer\n");
 }
 
 void installEngineHooks() {
-  // engine efx API, detoured in place
-  Hooks.R_BloodSprite = gEngfuncs.pEfxAPI->R_BloodSprite;
-  EngineHookList.push_back(
-      g_pMetaHookAPI->InlineHook((void *)Hooks.R_BloodSprite, H_R_BloodSprite,
-                                 (void **)&Hooks.R_BloodSprite));
-  Hooks.R_TempModel = gEngfuncs.pEfxAPI->R_TempModel;
-  EngineHookList.push_back(g_pMetaHookAPI->InlineHook(
-      (void *)Hooks.R_TempModel, H_R_TempModel, (void **)&Hooks.R_TempModel));
+  // engine efx API, detoured in place when the engine exports it
+  Hooks.R_BloodSprite = gEngfuncs.pEfxAPI ? gEngfuncs.pEfxAPI->R_BloodSprite
+                                          : nullptr;
+  if (Hooks.R_BloodSprite)
+    EngineHookList.push_back(g_pMetaHookAPI->InlineHook(
+        (void *)Hooks.R_BloodSprite, H_R_BloodSprite,
+        (void **)&Hooks.R_BloodSprite));
+  Hooks.R_TempModel =
+      gEngfuncs.pEfxAPI ? gEngfuncs.pEfxAPI->R_TempModel : nullptr;
+  if (Hooks.R_TempModel)
+    EngineHookList.push_back(g_pMetaHookAPI->InlineHook(
+        (void *)Hooks.R_TempModel, H_R_TempModel,
+        (void **)&Hooks.R_TempModel));
   // engine engfunc, detoured
   Hooks.pfnPlaybackEvent = gEngfuncs.pfnPlaybackEvent;
-  EngineHookList.push_back(g_pMetaHookAPI->InlineHook(
-      (void *)Hooks.pfnPlaybackEvent, H_pfnPlaybackEvent,
-      (void **)&Hooks.pfnPlaybackEvent));
-  // engine gamedata functions, detoured
-  EngineHookList.push_back(g_pMetaHookAPI->InlineHook(
-      (void *)Hooks.R_NewMap, H_R_NewMap, (void **)&Hooks.R_NewMap));
-  EngineHookList.push_back(g_pMetaHookAPI->InlineHook(
-      (void *)Hooks.CL_GetModelByIndex, H_CL_GetModelByIndex,
-      (void **)&Hooks.CL_GetModelByIndex));
+  if (Hooks.pfnPlaybackEvent)
+    EngineHookList.push_back(g_pMetaHookAPI->InlineHook(
+        (void *)Hooks.pfnPlaybackEvent, H_pfnPlaybackEvent,
+        (void **)&Hooks.pfnPlaybackEvent));
+  // engine gamedata functions, detoured only when the build carries them
+  if (Hooks.R_NewMap)
+    EngineHookList.push_back(g_pMetaHookAPI->InlineHook(
+        (void *)Hooks.R_NewMap, H_R_NewMap, (void **)&Hooks.R_NewMap));
+  if (Hooks.CL_GetModelByIndex)
+    EngineHookList.push_back(g_pMetaHookAPI->InlineHook(
+        (void *)Hooks.CL_GetModelByIndex, H_CL_GetModelByIndex,
+        (void **)&Hooks.CL_GetModelByIndex));
 }
 
 void fillClientAddress() {
@@ -236,6 +252,15 @@ void fillClientAddress() {
           abc::ResolveGameSymbol(abc::g_dwClientBase, "client",
                                  "CClient_SoundEngine_PlayFMODSound",
                                  MH_GAMESYMBOL_KIND_FUNCTION));
+  if (!Hooks.V_PunchAxis)
+    abc::ConsoleWarn(
+        "[AbcEssential] V_PunchAxis is missing from the gamedata; gauss "
+        "recoil is disabled\n");
+  if (!Hooks.CClient_SoundEngine_Initialize ||
+      !Hooks.CClient_SoundEngine_PlayFMODSound)
+    abc::ConsoleWarn(
+        "[AbcEssential] the client sound engine is missing from the "
+        "gamedata; gauss sounds are disabled\n");
 }
 
 void installClientHooks() {
@@ -245,6 +270,8 @@ void installClientHooks() {
   // hook, or when MetaHook reports the target hooked by a previous cycle whose
   // UnHook did not run.
   if (!ClientHookList.empty())
+    return;
+  if (!Hooks.CClient_SoundEngine_Initialize)
     return;
   if (g_pMetaHookAPI->FindInlineHook &&
       g_pMetaHookAPI->FindInlineHook(
